@@ -62,6 +62,30 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(mes
 logger = logging.getLogger("FileAgent")
 API_LOG_QUEUE: queue.Queue[Tuple[str, str]] = queue.Queue()
 API_LOG_DISPATCHER_STARTED = False
+CONSOLE_INFO_PREFIXES = (
+    "=",
+    "Inbox:",
+    "Output:",
+    "AI Model:",
+    "Max Workers:",
+    "Success:",
+    "Move failed",
+    "Total files:",
+    "Total time:",
+    "Post-run stats:",
+    "No files found",
+    "DEBUG_SINGLE_FILE"
+)
+
+
+class TerminalFilter(logging.Filter):
+    """Limit console noise to critical run info while leaving file logs verbose."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.levelno >= logging.WARNING:
+            return True
+        msg = record.getMessage()
+        return any(msg.startswith(prefix) for prefix in CONSOLE_INFO_PREFIXES)
 
 
 def load_config(config_path: str = CONFIG_PATH) -> None:
@@ -104,6 +128,7 @@ def setup_logging():
         fh.setFormatter(fmt)
         sh = logging.StreamHandler()
         sh.setFormatter(fmt)
+        sh.addFilter(TerminalFilter())
         agent_logger.addHandler(fh)
         agent_logger.addHandler(sh)
 
