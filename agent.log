@@ -1021,3 +1021,129 @@ TypeError: expected str, bytes or os.PathLike object, not NoneType
 2025-11-13 02:17:39 INFO    : Total files: 135, Successful: 116, Failed: 19
 2025-11-13 02:17:39 INFO    : Total time: 1408.90s, Avg per file: 10.44s
 2025-11-13 02:17:39 INFO    : Post-run stats: {'total_processed': 119, 'by_category': [<sqlite3.Row object at 0x1080cb6d0>, <sqlite3.Row object at 0x1080cb5b0>, <sqlite3.Row object at 0x1080cb470>, <sqlite3.Row object at 0x1080cb4b0>, <sqlite3.Row object at 0x1080cb530>, <sqlite3.Row object at 0x1080cb5f0>, <sqlite3.Row object at 0x1080cb490>, <sqlite3.Row object at 0x1080cb4d0>, <sqlite3.Row object at 0x1080cb7b0>, <sqlite3.Row object at 0x1080cb7d0>, <sqlite3.Row object at 0x1080cb7f0>, <sqlite3.Row object at 0x1080cb610>, <sqlite3.Row object at 0x1080cb130>, <sqlite3.Row object at 0x1080cb830>, <sqlite3.Row object at 0x1080cb890>, <sqlite3.Row object at 0x1080cb930>, <sqlite3.Row object at 0x1080cb970>, <sqlite3.Row object at 0x1080cb8b0>], 'cache_hit_rate': 0.0, 'avg_processing_time': 46.55370079569456}
+2025-11-13 02:46:28 INFO    : Configuration loaded from config.yaml
+2025-11-13 02:46:28 INFO    : ============================================================
+2025-11-13 02:46:28 INFO    : FILE ORGANIZATION AI AGENT STARTED
+2025-11-13 02:46:28 INFO    : ============================================================
+2025-11-13 02:46:28 INFO    : Inbox: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs
+2025-11-13 02:46:28 INFO    : Output: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles
+2025-11-13 02:46:28 INFO    : AI Model: gemma3:4b
+2025-11-13 02:46:28 INFO    : Max Workers: 4
+2025-11-13 02:46:28 INFO    : Existing categories: ['Innovation', 'Payments', 'PaymentProducts', 'ProductManagement', 'PlatformsBusiness', 'Prompt Engineering', 'AiProducts', 'UX', 'GenerativeAIProducts', 'ProductMetrics', 'KnowledgeIncorporation', 'ResearchPapers', 'ProductDesign', 'AiAgents', 'ValueProposition', 'SuperApps', 'EnergyProducts', 'BusinessModelDesign']
+2025-11-13 02:46:28 INFO    : Found 19 files to process
+2025-11-13 02:46:28 INFO    : Processing: Powerful_Mudras_1748003276.pdf
+2025-11-13 02:46:28 INFO    : Processing: Stack_AI_65_AI_Agents_Use_Cases_1761231409.pdf
+2025-11-13 02:46:28 INFO    : Processing: 5x_Types_of_Product_Vision_1759289156.pdf
+2025-11-13 02:46:28 INFO    : Processing: AI_Evals_101__1758539293.pdf
+2025-11-13 02:46:28 INFO    : Cache miss for Powerful_Mudras_1748003276.pdf. Starting extraction.
+2025-11-13 02:46:28 INFO    : Cache miss for AI_Evals_101__1758539293.pdf. Starting extraction.
+2025-11-13 02:46:28 INFO    : No extracted text in PDF, trying OCR fallback for /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/Powerful_Mudras_1748003276.pdf
+2025-11-13 02:46:28 INFO    : No extracted text in PDF, trying OCR fallback for /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/AI_Evals_101__1758539293.pdf
+2025-11-13 02:46:28 INFO    : Cache miss for 5x_Types_of_Product_Vision_1759289156.pdf. Starting extraction.
+2025-11-13 02:46:28 INFO    : No extracted text in PDF, trying OCR fallback for /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/5x_Types_of_Product_Vision_1759289156.pdf
+2025-11-13 02:46:28 INFO    : Cache miss for Stack_AI_65_AI_Agents_Use_Cases_1761231409.pdf. Starting extraction.
+2025-11-13 02:46:38 INFO    : Extraction finished for 5x_Types_of_Product_Vision_1759289156.pdf in 10.00s (chars=284)
+2025-11-13 02:46:41 INFO    : No extracted text in PDF, trying OCR fallback for /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/Stack_AI_65_AI_Agents_Use_Cases_1761231409.pdf
+2025-11-13 02:46:42 INFO    : Extraction finished for AI_Evals_101__1758539293.pdf in 14.80s (chars=5824)
+2025-11-13 02:46:44 INFO    : Ollama chat success model=gemma3:4b file=5x_Types_of_Product_Vision_1759289156.pdf req=1f49483deb614ed39ce9023d3e1b9ba5 duration=5.92s prompt_chars=1620
+2025-11-13 02:46:44 INFO    : Moved: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/5x_Types_of_Product_Vision_1759289156.pdf -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/ProductDesign/5x_Types_of_Product_Vision_1759289156.pdf
+2025-11-13 02:46:44 INFO    : Classification for 5x_Types_of_Product_Vision_1759289156.pdf complete. Category=ProductDesign Cached=False
+2025-11-13 02:46:44 INFO    : Success: 5x_Types_of_Product_Vision_1759289156.pdf -> ProductDesign (15.98s)
+2025-11-13 02:46:44 INFO    : Processing: IMG_0348.heic
+2025-11-13 02:46:44 INFO    : Cache miss for IMG_0348.heic. Starting extraction.
+2025-11-13 02:46:44 INFO    : Extraction finished for IMG_0348.heic in 0.00s (chars=0)
+2025-11-13 02:46:44 WARNING : Empty content or unsupported file type: IMG_0348.heic
+2025-11-13 02:46:44 INFO    : Processing: Product Mix Strategy.pdf
+2025-11-13 02:46:44 INFO    : Cache hit for Product Mix Strategy.pdf -> category=ProductManagement
+2025-11-13 02:46:44 INFO    : Moved: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/Product Mix Strategy.pdf -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/ProductManagement/Product Mix Strategy_1.pdf
+2025-11-13 02:46:44 INFO    : Classification for Product Mix Strategy.pdf complete. Category=ProductManagement Cached=True
+2025-11-13 02:46:44 INFO    : Success: Product Mix Strategy.pdf -> ProductManagement (0.00s)
+2025-11-13 02:46:44 INFO    : Processing: AWS_Executive_Guide_AI_Agents_1760522772.pdf
+2025-11-13 02:46:44 INFO    : Cache hit for AWS_Executive_Guide_AI_Agents_1760522772.pdf -> category=AiAgents
+2025-11-13 02:46:44 INFO    : Moved: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/AWS_Executive_Guide_AI_Agents_1760522772.pdf -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/AiAgents/AWS_Executive_Guide_AI_Agents_1760522772.pdf
+2025-11-13 02:46:44 INFO    : Classification for AWS_Executive_Guide_AI_Agents_1760522772.pdf complete. Category=AiAgents Cached=True
+2025-11-13 02:46:44 INFO    : Success: AWS_Executive_Guide_AI_Agents_1760522772.pdf -> AiAgents (0.04s)
+2025-11-13 02:46:44 INFO    : Processing: ai_prompt_humanize_card.md
+2025-11-13 02:46:44 INFO    : Cache miss for ai_prompt_humanize_card.md. Starting extraction.
+2025-11-13 02:46:44 INFO    : Extraction finished for ai_prompt_humanize_card.md in 0.00s (chars=0)
+2025-11-13 02:46:44 WARNING : Empty content or unsupported file type: ai_prompt_humanize_card.md
+2025-11-13 02:46:44 INFO    : Processing: Less is More Recursive Reasoning with Tiny Networks.pdf
+2025-11-13 02:46:44 INFO    : Cache miss for Less is More Recursive Reasoning with Tiny Networks.pdf. Starting extraction.
+2025-11-13 02:46:44 INFO    : Extraction finished for Less is More Recursive Reasoning with Tiny Networks.pdf in 0.35s (chars=47373)
+2025-11-13 02:46:44 INFO    : Extraction finished for Powerful_Mudras_1748003276.pdf in 16.41s (chars=1410)
+2025-11-13 02:46:49 INFO    : Ollama chat success model=gemma3:4b file=AI_Evals_101__1758539293.pdf req=355fa045d54f4219944d894254b6c513 duration=6.04s prompt_chars=7091
+2025-11-13 02:46:49 INFO    : Moved: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/AI_Evals_101__1758539293.pdf -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/Prompt Engineering/AI_Evals_101__1758539293.pdf
+2025-11-13 02:46:49 INFO    : Classification for AI_Evals_101__1758539293.pdf complete. Category=Prompt Engineering Cached=False
+2025-11-13 02:46:49 INFO    : Success: AI_Evals_101__1758539293.pdf -> Prompt Engineering (20.85s)
+2025-11-13 02:46:49 INFO    : Processing: toma-toma.mp3
+2025-11-13 02:46:49 INFO    : Cache miss for toma-toma.mp3. Starting extraction.
+2025-11-13 02:46:49 INFO    : Extraction finished for toma-toma.mp3 in 0.00s (chars=0)
+2025-11-13 02:46:49 WARNING : Empty content or unsupported file type: toma-toma.mp3
+2025-11-13 02:46:49 INFO    : Processing: ai doing big consulting work.pdf
+2025-11-13 02:46:49 INFO    : Cache hit for ai doing big consulting work.pdf -> category=AiProducts
+2025-11-13 02:46:49 INFO    : Moved: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/ai doing big consulting work.pdf -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/AiProducts/ai doing big consulting work_1.pdf
+2025-11-13 02:46:49 INFO    : Classification for ai doing big consulting work.pdf complete. Category=AiProducts Cached=True
+2025-11-13 02:46:49 INFO    : Success: ai doing big consulting work.pdf -> AiProducts (0.26s)
+2025-11-13 02:46:49 INFO    : Processing: 7-chakra-stones.png
+2025-11-13 02:46:49 INFO    : Cache miss for 7-chakra-stones.png. Starting extraction.
+2025-11-13 02:46:49 INFO    : Extraction finished for 7-chakra-stones.png in 0.24s (chars=0)
+2025-11-13 02:46:49 WARNING : Empty content or unsupported file type: 7-chakra-stones.png
+2025-11-13 02:46:49 INFO    : Processing: AI_Product_Management_Glossary_1757853119.pdf
+2025-11-13 02:46:49 INFO    : Cache hit for AI_Product_Management_Glossary_1757853119.pdf -> category=AIProducts
+2025-11-13 02:46:49 INFO    : Moved: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/AI_Product_Management_Glossary_1757853119.pdf -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/AIProducts/AI_Product_Management_Glossary_1757853119_1.pdf
+2025-11-13 02:46:49 INFO    : Classification for AI_Product_Management_Glossary_1757853119.pdf complete. Category=AIProducts Cached=True
+2025-11-13 02:46:49 INFO    : New category added: AIProducts
+2025-11-13 02:46:49 INFO    : Success: AI_Product_Management_Glossary_1757853119.pdf -> AIProducts (0.01s)
+2025-11-13 02:46:49 INFO    : Processing: IMG_9324.mov
+2025-11-13 02:46:49 INFO    : Cache miss for IMG_9324.mov. Starting extraction.
+2025-11-13 02:46:49 INFO    : Extraction finished for IMG_9324.mov in 0.00s (chars=0)
+2025-11-13 02:46:49 WARNING : Empty content or unsupported file type: IMG_9324.mov
+2025-11-13 02:46:49 INFO    : Processing: Agentic_Applications_12_Do_s_and_Don_ts_1758131282.pdf
+2025-11-13 02:46:49 INFO    : Cache miss for Agentic_Applications_12_Do_s_and_Don_ts_1758131282.pdf. Starting extraction.
+2025-11-13 02:46:52 INFO    : No extracted text in PDF, trying OCR fallback for /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/Agentic_Applications_12_Do_s_and_Don_ts_1758131282.pdf
+2025-11-13 02:47:06 INFO    : Ollama chat success model=gemma3:4b file=Less is More Recursive Reasoning with Tiny Networks.pdf req=c9a6b94ae897438bba8a206d8144ce69 duration=22.24s prompt_chars=21402
+2025-11-13 02:47:06 INFO    : Moved: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/Less is More Recursive Reasoning with Tiny Networks.pdf -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/AiAgents/Less is More Recursive Reasoning with Tiny Networks.pdf
+2025-11-13 02:47:06 INFO    : Classification for Less is More Recursive Reasoning with Tiny Networks.pdf complete. Category=AiAgents Cached=False
+2025-11-13 02:47:06 INFO    : Success: Less is More Recursive Reasoning with Tiny Networks.pdf -> AiAgents (22.59s)
+2025-11-13 02:47:06 INFO    : Processing: Planilha sem titulo.xlsx
+2025-11-13 02:47:06 INFO    : Cache miss for Planilha sem titulo.xlsx. Starting extraction.
+2025-11-13 02:47:06 INFO    : Extraction finished for Planilha sem titulo.xlsx in 0.00s (chars=0)
+2025-11-13 02:47:06 WARNING : Empty content or unsupported file type: Planilha sem titulo.xlsx
+2025-11-13 02:47:06 INFO    : Processing: McKinsey_Agentic_Commerce_1760997569.pdf
+2025-11-13 02:47:06 INFO    : Cache miss for McKinsey_Agentic_Commerce_1760997569.pdf. Starting extraction.
+2025-11-13 02:47:09 INFO    : Ollama chat success model=gemma3:4b file=Powerful_Mudras_1748003276.pdf req=ed9302e122a843e1b3aace922f4a611e duration=25.01s prompt_chars=2709
+2025-11-13 02:47:10 INFO    : Moved: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/Powerful_Mudras_1748003276.pdf -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/AiAgents/Powerful_Mudras_1748003276.pdf
+2025-11-13 02:47:10 INFO    : Classification for Powerful_Mudras_1748003276.pdf complete. Category=AiAgents Cached=False
+2025-11-13 02:47:10 INFO    : Success: Powerful_Mudras_1748003276.pdf -> AiAgents (42.56s)
+2025-11-13 02:47:10 INFO    : Processing: 2017-03-27-AUDIO-00038970.mp3
+2025-11-13 02:47:13 INFO    : Cache miss for 2017-03-27-AUDIO-00038970.mp3. Starting extraction.
+2025-11-13 02:47:13 INFO    : Extraction finished for 2017-03-27-AUDIO-00038970.mp3 in 0.00s (chars=0)
+2025-11-13 02:47:13 WARNING : Empty content or unsupported file type: 2017-03-27-AUDIO-00038970.mp3
+2025-11-13 02:47:13 INFO    : Processing: Agent_Guide_OpenAI_1756073234.pdf
+2025-11-13 02:47:14 INFO    : Cache miss for Agent_Guide_OpenAI_1756073234.pdf. Starting extraction.
+2025-11-13 02:47:21 INFO    : No extracted text in PDF, trying OCR fallback for /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/Agent_Guide_OpenAI_1756073234.pdf
+2025-11-13 02:47:30 INFO    : No extracted text in PDF, trying OCR fallback for /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/McKinsey_Agentic_Commerce_1760997569.pdf
+2025-11-13 02:47:50 INFO    : Extraction finished for Agent_Guide_OpenAI_1756073234.pdf in 35.74s (chars=19625)
+2025-11-13 02:47:54 INFO    : Extraction finished for Stack_AI_65_AI_Agents_Use_Cases_1761231409.pdf in 85.75s (chars=50156)
+2025-11-13 02:48:00 INFO    : Extraction finished for Agentic_Applications_12_Do_s_and_Don_ts_1758131282.pdf in 70.41s (chars=11281)
+2025-11-13 02:48:04 INFO    : Ollama chat success model=gemma3:4b file=Agent_Guide_OpenAI_1756073234.pdf req=f6840aa797fd43cc843b2958e503be76 duration=13.65s prompt_chars=20754
+2025-11-13 02:48:04 INFO    : Moved: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/Agent_Guide_OpenAI_1756073234.pdf -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/AIAgents/Agent_Guide_OpenAI_1756073234.pdf
+2025-11-13 02:48:04 INFO    : Classification for Agent_Guide_OpenAI_1756073234.pdf complete. Category=AIAgents Cached=False
+2025-11-13 02:48:04 INFO    : New category added: AIAgents
+2025-11-13 02:48:04 INFO    : Success: Agent_Guide_OpenAI_1756073234.pdf -> AIAgents (50.84s)
+2025-11-13 02:48:13 INFO    : Extraction finished for McKinsey_Agentic_Commerce_1760997569.pdf in 66.27s (chars=67696)
+2025-11-13 02:48:16 INFO    : Ollama chat success model=gemma3:4b file=Stack_AI_65_AI_Agents_Use_Cases_1761231409.pdf req=9f15ba1fa72349ac8946bd962944683b duration=22.38s prompt_chars=21107
+2025-11-13 02:48:16 INFO    : Moved: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/Stack_AI_65_AI_Agents_Use_Cases_1761231409.pdf -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/AIAgents/Stack_AI_65_AI_Agents_Use_Cases_1761231409.pdf
+2025-11-13 02:48:16 INFO    : Classification for Stack_AI_65_AI_Agents_Use_Cases_1761231409.pdf complete. Category=AIAgents Cached=False
+2025-11-13 02:48:16 INFO    : Success: Stack_AI_65_AI_Agents_Use_Cases_1761231409.pdf -> AIAgents (108.48s)
+2025-11-13 02:48:25 INFO    : Ollama chat success model=gemma3:4b file=Agentic_Applications_12_Do_s_and_Don_ts_1758131282.pdf req=b6eadf6c9a6342b98d071d1f0d0271dc duration=24.98s prompt_chars=12502
+2025-11-13 02:48:25 INFO    : Moved: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/Agentic_Applications_12_Do_s_and_Don_ts_1758131282.pdf -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/AIProducts/Agentic_Applications_12_Do_s_and_Don_ts_1758131282.pdf
+2025-11-13 02:48:25 INFO    : Classification for Agentic_Applications_12_Do_s_and_Don_ts_1758131282.pdf complete. Category=AIProducts Cached=False
+2025-11-13 02:48:25 INFO    : Success: Agentic_Applications_12_Do_s_and_Don_ts_1758131282.pdf -> AIProducts (95.82s)
+2025-11-13 02:48:39 INFO    : Ollama chat success model=gemma3:4b file=McKinsey_Agentic_Commerce_1760997569.pdf req=865953ed0baa49b38af15949b832ef1e duration=26.11s prompt_chars=21275
+2025-11-13 02:48:39 INFO    : Moved: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/McKinsey_Agentic_Commerce_1760997569.pdf -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/AIProducts/McKinsey_Agentic_Commerce_1760997569.pdf
+2025-11-13 02:48:39 INFO    : Classification for McKinsey_Agentic_Commerce_1760997569.pdf complete. Category=AIProducts Cached=False
+2025-11-13 02:48:39 INFO    : Success: McKinsey_Agentic_Commerce_1760997569.pdf -> AIProducts (92.46s)
+2025-11-13 02:48:39 INFO    : Total files: 19, Successful: 12, Failed: 7
+2025-11-13 02:48:39 INFO    : Total time: 131.09s, Avg per file: 6.90s
+2025-11-13 02:48:39 INFO    : Post-run stats: {'total_processed': 131, 'by_category': [<sqlite3.Row object at 0x10a1ae150>, <sqlite3.Row object at 0x10a1ae330>, <sqlite3.Row object at 0x10a1ae550>, <sqlite3.Row object at 0x10a1ae2f0>, <sqlite3.Row object at 0x10a1ae350>, <sqlite3.Row object at 0x10a1ae650>, <sqlite3.Row object at 0x109d16130>, <sqlite3.Row object at 0x109d16a10>, <sqlite3.Row object at 0x10a3eaf70>, <sqlite3.Row object at 0x10a3ead10>, <sqlite3.Row object at 0x10a3eae50>, <sqlite3.Row object at 0x10a3ea610>, <sqlite3.Row object at 0x10a3eacf0>, <sqlite3.Row object at 0x10a3ead50>, <sqlite3.Row object at 0x10a3eacd0>, <sqlite3.Row object at 0x10a3eaeb0>, <sqlite3.Row object at 0x10a3ead70>, <sqlite3.Row object at 0x10a3eaef0>], 'cache_hit_rate': 3.0534351145038165, 'avg_processing_time': 45.72354453938608}

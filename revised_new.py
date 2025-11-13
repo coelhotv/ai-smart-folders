@@ -608,7 +608,7 @@ def extract_text(file_path: str, logger: logging.Logger) -> Optional[str]:
                 logger.warning("Image OCR failed for %s: %s", file_path, e)
                 return None
 
-        if ext == '.txt':
+        if ext in ['.txt', '.md', '.csv', '.log']:
             try:
                 with open(file_path, 'r', encoding='utf-8') as f:
                     return f.read().strip() or None
