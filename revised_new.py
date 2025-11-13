@@ -12,6 +12,8 @@ import sqlite3
 import yaml
 import threading
 import shutil
+import queue
+import uuid
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -58,7 +60,8 @@ CONFIG_PATH = "config.yaml"
 # Logging setup - minimal to ensure our logger variable exists
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s", force=1)
 logger = logging.getLogger("FileAgent")
-api_logger = logging.getLogger("OllamaAPI")
+API_LOG_QUEUE: queue.Queue[Tuple[str, str]] = queue.Queue()
+API_LOG_DISPATCHER_STARTED = False
 
 
 def load_config(config_path: str = CONFIG_PATH) -> None:
@@ -114,7 +117,34 @@ def setup_logging():
         api_fh.setFormatter(logging.Formatter("%(asctime)s --- %(message)s", "%Y-%m-%d %H:%M:%S"))
         api_logger.addHandler(api_fh)
 
+    start_api_log_dispatcher(api_logger)
+
     return agent_logger, api_logger
+
+
+def start_api_log_dispatcher(api_logger: logging.Logger) -> None:
+    """Ensure a background thread flushes request/response pairs sequentially."""
+    global API_LOG_DISPATCHER_STARTED
+    if API_LOG_DISPATCHER_STARTED:
+        return
+
+    def dispatcher():
+        while True:
+            try:
+                request_log, response_log = API_LOG_QUEUE.get()
+            except Exception:
+                continue
+            api_logger.info(request_log)
+            api_logger.info(response_log)
+            API_LOG_QUEUE.task_done()
+
+    thread = threading.Thread(target=dispatcher, daemon=True, name="ApiLogDispatcher")
+    thread.start()
+    API_LOG_DISPATCHER_STARTED = True
+
+
+def enqueue_api_log(request_log: str, response_log: str) -> None:
+    API_LOG_QUEUE.put((request_log, response_log))
 
 
 class FileClassificationCache:
@@ -545,7 +575,6 @@ def get_classification_from_ollama(
     file_path: str,
     existing_categories: List[str],
     logger: logging.Logger,
-    api_logger: logging.Logger
 ) -> Optional[dict]:
     if len(file_content) > MAX_CONTENT_LENGTH:
         # Keep a balanced head/tail preview but never exceed MAX_CONTENT_LENGTH
@@ -588,21 +617,29 @@ Respond ONLY with a JSON object like:
 """
 
     excerpt_for_log = content_preview[:500]
-    api_logger.info(
-        "REQUEST: filename=%s path=%s excerpt=%s",
-        filename,
-        file_path,
-        (excerpt_for_log + "...") if len(content_preview) > 500 else excerpt_for_log,
+    request_id = uuid.uuid4().hex
+    truncated_excerpt = (excerpt_for_log + "...") if len(content_preview) > 500 else excerpt_for_log
+    request_log = (
+        "REQUEST id=%s filename=%s path=%s excerpt=%s"
+        % (
+            request_id,
+            filename,
+            file_path,
+            truncated_excerpt,
+        )
     )
 
     try:
-        response = call_ollama_chat(model=OLLAMA_MODEL,
-                                   messages=[{'role': 'user', 'content': prompt}],
-                                   fmt='json',
-                                   logger=logger)
+        response = call_ollama_chat(
+            model=OLLAMA_MODEL,
+            messages=[{'role': 'user', 'content': prompt}],
+            fmt='json',
+            logger=logger
+        )
     except Exception as e:
         logger.error("Ollama chat failed: %s", e)
-        api_logger.exception("Ollama exception")
+        response_log = f"RESPONSE RAW id={request_id} <call failed: {e}>"
+        enqueue_api_log(request_log, response_log)
         return None
 
     # --- normalize the response into 'content' variable ---
@@ -630,8 +667,6 @@ Respond ONLY with a JSON object like:
         if content is None:
             content = str(response)
 
-        api_logger.info("RESPONSE RAW: %s", str(content)[:2000])
-
         # If content is a string, try a few parsing strategies
         if isinstance(content, str):
             # 1) Direct JSON
@@ -652,11 +687,16 @@ Respond ONLY with a JSON object like:
                         # leave content as original string for later handling
                 else:
                     logger.debug("No JSON-like substring found in Ollama response.")
-
+        response_text = str(content)[:2000]
     except Exception as e:
         logger.warning("Failed to normalize Ollama response (%s): %s", type(response), e)
-        api_logger.warning("RESPONSE (RAW): %s", str(response))
-        content = None
+        response_text = str(response)[:2000]
+        response_log = f"RESPONSE RAW id={request_id} <normalization failed: {e}> {response_text}"
+        enqueue_api_log(request_log, response_log)
+        return None
+    else:
+        response_log = f"RESPONSE RAW id={request_id} {response_text}"
+        enqueue_api_log(request_log, response_log)
 
     if not isinstance(content, dict):
         logger.warning("Ollama content is not a JSON object/dict.")
@@ -716,7 +756,6 @@ def process_single_file(
     cache: FileClassificationCache,
     db: FileDatabase,
     logger: logging.Logger,
-    api_logger: logging.Logger,
     categories_lock: threading.Lock
 ) -> Dict[str, Any]:
     start_time = time.time()
@@ -748,7 +787,7 @@ def process_single_file(
                 result['processing_time'] = time.time() - start_time
                 return result
 
-            classification = get_classification_from_ollama(content, filename, file_path, existing_categories, logger, api_logger)
+            classification = get_classification_from_ollama(content, filename, file_path, existing_categories, logger)
             if classification:
                 cache.set(file_path, classification)
 
@@ -801,7 +840,7 @@ def process_single_file(
     return result
 
 
-def main(logger: logging.Logger, api_logger: logging.Logger) -> None:
+def main(logger: logging.Logger) -> None:
     logger.info("=" * 60)
     logger.info("FILE ORGANIZATION AI AGENT STARTED")
     logger.info("=" * 60)
@@ -840,7 +879,7 @@ def main(logger: logging.Logger, api_logger: logging.Logger) -> None:
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         future_to_file = {
-            executor.submit(process_single_file, f, existing_categories, cache, db, logger, api_logger, categories_lock): f
+            executor.submit(process_single_file, f, existing_categories, cache, db, logger, categories_lock): f
             for f in files_to_process
         }
         for fut in as_completed(future_to_file):
@@ -866,14 +905,14 @@ def main(logger: logging.Logger, api_logger: logging.Logger) -> None:
 
 
 if __name__ == "__main__":
-    logger, api_logger = setup_logging()
+    logger, _ = setup_logging()
     load_config()
     if not check_prereqs(logger):
         logger.critical("Pre-run checks failed. Fix issues then retry.")
         raise SystemExit(1)
 
     try:
-        main(logger, api_logger)
+    main(logger)
     except KeyboardInterrupt:
         logger.info("Interrupted by user. Exiting.")
     except Exception:

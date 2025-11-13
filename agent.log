@@ -1,0 +1,39 @@
+2025-11-12 23:24:50 INFO    : Configuration loaded from config.yaml
+2025-11-12 23:24:50 INFO    : ============================================================
+2025-11-12 23:24:50 INFO    : FILE ORGANIZATION AI AGENT STARTED
+2025-11-12 23:24:50 INFO    : ============================================================
+2025-11-12 23:24:50 INFO    : Inbox: /Users/coelhotv/Dropbox/_courses/__product-dev
+2025-11-12 23:24:50 INFO    : Output: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles
+2025-11-12 23:24:50 INFO    : AI Model: gemma3:4b
+2025-11-12 23:24:50 INFO    : Max Workers: 4
+2025-11-12 23:24:50 INFO    : Existing categories: ['Innovation', 'ProductManagement', 'PlatformsBusiness', 'AiProducts', 'UX', 'ResearchPapers', 'ProductDesign', 'AiAgents', 'ValueProposition', 'BusinessModelDesign']
+2025-11-12 23:24:50 INFO    : Found 12 files to process
+2025-11-12 23:24:50 INFO    : Processing: Product-canvas.pptx
+2025-11-12 23:24:50 INFO    : Processing: public_prd.doc
+2025-11-12 23:24:50 INFO    : Processing: LeanProductMarketing-SynerzipWebinar.ppt
+2025-11-12 23:24:50 INFO    : Processing: TheVisionBoardExtended.pptx
+2025-11-12 23:24:50 WARNING : Empty content or unsupported file type: TheVisionBoardExtended.pptx
+2025-11-12 23:24:50 INFO    : Processing: story-canvas.pptx
+2025-11-12 23:24:50 WARNING : Empty content or unsupported file type: Product-canvas.pptx
+2025-11-12 23:24:50 INFO    : Processing: Templates XLSX-20250317T191257Z-001.zip
+2025-11-12 23:24:50 WARNING : Empty content or unsupported file type: Templates XLSX-20250317T191257Z-001.zip
+2025-11-12 23:24:50 INFO    : Processing: Templates PPTX-20250317T191325Z-001.zip
+2025-11-12 23:24:50 WARNING : Empty content or unsupported file type: story-canvas.pptx
+2025-11-12 23:24:50 INFO    : Processing: Templates PDF-20250317T191414Z-001.zip
+2025-11-12 23:24:50 WARNING : Empty content or unsupported file type: Templates PDF-20250317T191414Z-001.zip
+2025-11-12 23:24:50 INFO    : Processing: Value-Proposition-Canvas.pptx
+2025-11-12 23:24:50 WARNING : Empty content or unsupported file type: Value-Proposition-Canvas.pptx
+2025-11-12 23:24:50 INFO    : Processing: the-melt-frame-canvas.pptx
+2025-11-12 23:24:50 WARNING : Empty content or unsupported file type: the-melt-frame-canvas.pptx
+2025-11-12 23:24:50 INFO    : Processing: Business-Model-Process-WorkbookTemplate.ppt
+2025-11-12 23:24:50 WARNING : Empty content or unsupported file type: Templates PPTX-20250317T191325Z-001.zip
+2025-11-12 23:24:50 INFO    : Processing: customer_journey_canvas.pptx
+2025-11-12 23:24:50 WARNING : Empty content or unsupported file type: customer_journey_canvas.pptx
+2025-11-12 23:24:52 WARNING : Empty content or unsupported file type: Business-Model-Process-WorkbookTemplate.ppt
+2025-11-12 23:24:59 INFO    : Moved: /Users/coelhotv/Dropbox/_courses/__product-dev/public_prd.doc -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/ProductManagement/public_prd.doc
+2025-11-12 23:24:59 INFO    : Success: public_prd.doc -> ProductManagement (9.60s)
+2025-11-12 23:25:11 INFO    : Moved: /Users/coelhotv/Dropbox/_courses/__product-dev/LeanProductMarketing-SynerzipWebinar.ppt -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/ProductManagement/LeanProductMarketing-SynerzipWebinar.ppt
+2025-11-12 23:25:11 INFO    : Success: LeanProductMarketing-SynerzipWebinar.ppt -> ProductManagement (20.79s)
+2025-11-12 23:25:11 INFO    : Total files: 12, Successful: 2, Failed: 10
+2025-11-12 23:25:11 INFO    : Total time: 20.79s, Avg per file: 1.73s
+2025-11-12 23:25:11 INFO    : Post-run stats: {'total_processed': 2, 'by_category': [<sqlite3.Row object at 0x107a70450>], 'cache_hit_rate': 0.0, 'avg_processing_time': 15.193459510803223}
