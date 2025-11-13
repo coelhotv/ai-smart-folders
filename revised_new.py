@@ -235,12 +235,11 @@ class FileClassificationCache:
         with self.lock:
             self.cache[h] = {
                 "category": classification_data.get("category"),
-                "filename": classification_data.get("filename"),
                 "cached_at": datetime.utcnow().isoformat()
             }
             # write immediately; safe for small caches. Could be batched in other designs.
             self.save_cache()
-            self.logger.info("Cached classification for %s", classification_data.get("filename"))
+            self.logger.info("Cached classification for category=%s", classification_data.get("category"))
 
 
 class FileDatabase:
@@ -920,7 +919,6 @@ def process_single_file(
             return result
 
         category = classification.get("category", "Misc")
-        filename_new = classification.get("filename", filename)
         file_hash = cache.get_file_hash(file_path)
 
         try:
@@ -928,12 +926,11 @@ def process_single_file(
         except Exception:
             file_size = None
 
-        dest_path = move_file(file_path, category, filename_new, logger)
+        dest_path = move_file(file_path, category, filename, logger)
         logger.info(
-            "Classification for %s complete. Category=%s Filename=%s Cached=%s",
+            "Classification for %s complete. Category=%s Cached=%s",
             filename,
             category,
-            filename_new,
             result['cached']
         )
         processing_time = time.time() - start_time
