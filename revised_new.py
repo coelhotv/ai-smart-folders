@@ -372,7 +372,15 @@ def retry(exceptions, tries: int = 3, delay: float = 1.0, backoff: int = 2):
                 except exceptions as e:
                     last_exception = e
                     logger = kwargs.get("logger", logging.getLogger("FileAgent"))
-                    logger.warning("Transient error: %s. Retrying in %.1fs...", e, _delay)
+                    file_hint = kwargs.get("filename")
+                    req_hint = kwargs.get("request_id")
+                    logger.warning(
+                        "Transient error for file=%s req=%s: %s. Retrying in %.1fs...",
+                        file_hint or "<unknown>",
+                        req_hint or "<none>",
+                        e,
+                        _delay
+                    )
                     time.sleep(_delay)
                     _tries -= 1
                     _delay *= backoff
@@ -408,6 +416,40 @@ def is_tesseract_available() -> bool:
         except Exception:
             pass
     return shutil.which("tesseract") is not None
+
+
+def run_soffice_conversion(src_path: str, target_format: str, out_dir: str, logger: logging.Logger) -> bool:
+    """Invoke LibreOffice to convert a file and log detailed errors on failure."""
+    cmd = ['soffice', '--headless', '--convert-to', target_format, '--outdir', out_dir, src_path]
+    logger.debug("Running soffice conversion: %s", " ".join(cmd))
+    try:
+        proc = subprocess.run(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False
+        )
+    except Exception as exc:
+        logger.error("Failed to launch soffice for %s: %s", src_path, exc)
+        return False
+
+    if proc.returncode != 0:
+        stdout = (proc.stdout or "").strip()
+        stderr = (proc.stderr or "").strip()
+        logger.error(
+            "soffice conversion failed for %s (-> %s, exit %s). stdout: %s | stderr: %s",
+            src_path,
+            target_format,
+            proc.returncode,
+            stdout or "<empty>",
+            stderr or "<empty>",
+        )
+        return False
+
+    if proc.stderr:
+        logger.debug("soffice stderr for %s: %s", src_path, proc.stderr.strip())
+    return True
 
 
 def _pdf_ocr_with_pdf2image(pdf_path: str, logger: logging.Logger) -> Optional[str]:
@@ -455,7 +497,10 @@ def extract_text(file_path: str, logger: logging.Logger) -> Optional[str]:
 
         if ext == '.docx' and docx:
             d = docx.Document(file_path)
-            return "\n".join(p.text for p in d.paragraphs).strip() or None
+            text = "\n".join(p.text for p in d.paragraphs).strip() or None
+            if not text:
+                logger.warning("DOCX file %s contained no paragraph text.", file_path)
+            return text
 
         if ext == '.doc':
             # convert if soffice available
@@ -464,20 +509,22 @@ def extract_text(file_path: str, logger: logging.Logger) -> Optional[str]:
                 logger.warning("soffice not found: cannot convert .doc %s", file_path)
                 return None
             try:
-                subprocess.check_call(['soffice', '--headless', '--convert-to', 'docx', '--outdir', out_dir, file_path],
-                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                if not run_soffice_conversion(file_path, 'docx', out_dir, logger):
+                    return None
                 base_name = os.path.splitext(os.path.basename(file_path))[0]
                 docx_path = os.path.join(out_dir, base_name + '.docx')
                 if os.path.exists(docx_path) and docx:
                     d = docx.Document(docx_path)
                     text = "\n".join(p.text for p in d.paragraphs).strip() or None
+                    if not text:
+                        logger.warning("DOC conversion produced DOCX but no text for %s", file_path)
                     try:
                         os.remove(docx_path)
                     except Exception:
                         pass
                     return text
             except Exception as e:
-                logger.warning("soffice conversion failed for %s: %s", file_path, e)
+                logger.warning("DOC conversion pipeline failed for %s: %s", file_path, e)
             return None
 
         if ext in ('.pptx',) and Presentation:
@@ -488,7 +535,10 @@ def extract_text(file_path: str, logger: logging.Logger) -> Optional[str]:
                         for paragraph in shape.text_frame.paragraphs:
                             for run in paragraph.runs:
                                 text_parts.append(run.text)
-            return "\n".join(text_parts).strip() or None
+            text = "\n".join(text_parts).strip() or None
+            if not text:
+                logger.warning("PPTX file %s had no readable text frames.", file_path)
+            return text
 
         if ext == '.ppt':
             out_dir = os.path.dirname(file_path)
@@ -496,8 +546,8 @@ def extract_text(file_path: str, logger: logging.Logger) -> Optional[str]:
                 logger.warning("soffice not found: cannot convert .ppt %s", file_path)
                 return None
             try:
-                subprocess.check_call(['soffice', '--headless', '--convert-to', 'pptx', '--outdir', out_dir, file_path],
-                                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                if not run_soffice_conversion(file_path, 'pptx', out_dir, logger):
+                    return None
                 base_name = os.path.splitext(os.path.basename(file_path))[0]
                 pptx_path = os.path.join(out_dir, base_name + '.pptx')
                 if os.path.exists(pptx_path) and Presentation:
@@ -508,13 +558,16 @@ def extract_text(file_path: str, logger: logging.Logger) -> Optional[str]:
                                 for paragraph in shape.text_frame.paragraphs:
                                     for run in paragraph.runs:
                                         text_parts.append(run.text)
+                    text = "\n".join(text_parts).strip() or None
+                    if not text:
+                        logger.warning("PPT conversion produced PPTX but no text for %s", file_path)
                     try:
                         os.remove(pptx_path)
                     except Exception:
                         pass
-                    return "\n".join(text_parts).strip() or None
+                    return text
             except Exception as e:
-                logger.warning("soffice conversion failed for %s: %s", file_path, e)
+                logger.warning("PPT conversion pipeline failed for %s: %s", file_path, e)
             return None
 
         if ext in ['.jpg', '.jpeg', '.png']:
@@ -566,7 +619,34 @@ def call_ollama_chat(model: str, messages: list, fmt: str = 'json', **kwargs) ->
     """Call ollama.chat with retries (if ollama available)."""
     if ollama is None:
         raise RuntimeError("Ollama client not available (import failed)")
-    return ollama.chat(model=model, messages=messages, format=fmt)
+    logger_obj = kwargs.get("logger", logging.getLogger("OllamaAPI"))
+    request_id = kwargs.get("request_id")
+    filename = kwargs.get("filename")
+    prompt_chars = sum(len(m.get('content', '')) for m in messages) if messages else 0
+    start = time.perf_counter()
+    try:
+        response = ollama.chat(model=model, messages=messages, format=fmt)
+    except Exception as exc:
+        duration = time.perf_counter() - start
+        logger_obj.error(
+            "Ollama chat failed model=%s file=%s req=%s after %.2fs: %s",
+            model,
+            filename or "<unknown>",
+            request_id or "<none>",
+            duration,
+            exc
+        )
+        raise
+    duration = time.perf_counter() - start
+    logger_obj.info(
+        "Ollama chat success model=%s file=%s req=%s duration=%.2fs prompt_chars=%d",
+        model,
+        filename or "<unknown>",
+        request_id or "<none>",
+        duration,
+        prompt_chars
+    )
+    return response
 
 
 def get_classification_from_ollama(
@@ -634,7 +714,9 @@ Respond ONLY with a JSON object like:
             model=OLLAMA_MODEL,
             messages=[{'role': 'user', 'content': prompt}],
             fmt='json',
-            logger=logger
+            logger=logger,
+            request_id=request_id,
+            filename=filename
         )
     except Exception as e:
         logger.error("Ollama chat failed: %s", e)
@@ -742,10 +824,10 @@ def check_prereqs(logger: logging.Logger) -> bool:
         return False
 
     if not is_tesseract_available():
-        logger.warning("Tesseract not found. OCR fallbacks disabled.")
+        logger.warning("Tesseract not found. Install it to enable OCR fallbacks for PDFs/images.")
 
     if not shutil.which("soffice"):
-        logger.warning("soffice (LibreOffice) not found. .doc/.ppt conversion disabled.")
+        logger.warning("soffice (LibreOffice) not found. Install LibreOffice to enable .doc/.ppt conversion.")
 
     return True
 
@@ -776,9 +858,22 @@ def process_single_file(
         if cached:
             classification = cached
             result["cached"] = True
-            logger.info("Using cached classification for %s", filename)
+            logger.info(
+                "Cache hit for %s -> category=%s",
+                filename,
+                cached.get("category")
+            )
         else:
+            logger.info("Cache miss for %s. Starting extraction.", filename)
+            extract_start = time.perf_counter()
             content = extract_text(file_path, logger)
+            extract_duration = time.perf_counter() - extract_start
+            logger.info(
+                "Extraction finished for %s in %.2fs (chars=%d)",
+                filename,
+                extract_duration,
+                len(content or "")
+            )
             if not content or content.isspace():
                 msg = "Empty content or unsupported file type"
                 logger.warning(msg + ": %s", filename)
@@ -809,6 +904,13 @@ def process_single_file(
             file_size = None
 
         dest_path = move_file(file_path, category, filename_new, logger)
+        logger.info(
+            "Classification for %s complete. Category=%s Filename=%s Cached=%s",
+            filename,
+            category,
+            filename_new,
+            result['cached']
+        )
         processing_time = time.time() - start_time
 
         if dest_path:
@@ -864,6 +966,15 @@ def main(logger: logging.Logger) -> None:
         if os.path.isfile(os.path.join(INBOX_DIR, f)) and not f.startswith('.')
     ]
 
+    debug_target = os.environ.get("DEBUG_SINGLE_FILE")
+    if debug_target:
+        debug_path = os.path.join(INBOX_DIR, debug_target)
+        if os.path.exists(debug_path):
+            files_to_process = [debug_target]
+            logger.info("DEBUG_SINGLE_FILE active. Restricting run to: %s", debug_target)
+        else:
+            logger.warning("DEBUG_SINGLE_FILE=%s but file not found in inbox.", debug_target)
+
     if not files_to_process:
         logger.info("No files found to organize.")
         stats = db.get_statistics()
@@ -912,7 +1023,7 @@ if __name__ == "__main__":
         raise SystemExit(1)
 
     try:
-    main(logger)
+        main(logger)
     except KeyboardInterrupt:
         logger.info("Interrupted by user. Exiting.")
     except Exception:
