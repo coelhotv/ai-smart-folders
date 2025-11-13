@@ -1,0 +1,8 @@
+inbox_dir: /Users/coelhotv/Dropbox/_reports/platform revolution - book bonus/Whitepapers
+organized_dir: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles
+ollama_model: gemma3:4b
+ignore_dirs:
+- _Unprocessed
+- _Ignored
+max_content_length: 20000
+max_workers: 4
