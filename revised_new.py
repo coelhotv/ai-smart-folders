@@ -587,7 +587,13 @@ Respond ONLY with a JSON object like:
 }}
 """
 
-    api_logger.info("REQUEST (truncated): %s", (prompt[:800] + "...") if len(prompt) > 800 else prompt)
+    excerpt_for_log = content_preview[:500]
+    api_logger.info(
+        "REQUEST: filename=%s path=%s excerpt=%s",
+        filename,
+        file_path,
+        (excerpt_for_log + "...") if len(content_preview) > 500 else excerpt_for_log,
+    )
 
     try:
         response = call_ollama_chat(model=OLLAMA_MODEL,
