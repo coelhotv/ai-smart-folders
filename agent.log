@@ -1,0 +1,62 @@
+2025-11-13 01:36:43 INFO    : Configuration loaded from config.yaml
+2025-11-13 01:36:43 INFO    : ============================================================
+2025-11-13 01:36:43 INFO    : FILE ORGANIZATION AI AGENT STARTED
+2025-11-13 01:36:43 INFO    : ============================================================
+2025-11-13 01:36:43 INFO    : Inbox: /Users/coelhotv/Dropbox/_courses/__product-dev
+2025-11-13 01:36:43 INFO    : Output: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles
+2025-11-13 01:36:43 INFO    : AI Model: gemma3:4b
+2025-11-13 01:36:43 INFO    : Max Workers: 4
+2025-11-13 01:36:43 INFO    : Existing categories: ['Innovation', 'ProductManagement', 'PlatformsBusiness', 'AiProducts', 'UX', 'ResearchPapers', 'ProductDesign', 'AiAgents', 'ValueProposition', 'BusinessModelDesign']
+2025-11-13 01:36:43 INFO    : Found 10 files to process
+2025-11-13 01:36:43 INFO    : Processing: Product-canvas.pptx
+2025-11-13 01:36:43 INFO    : Processing: TheVisionBoardExtended.pptx
+2025-11-13 01:36:43 INFO    : Processing: story-canvas.pptx
+2025-11-13 01:36:43 INFO    : Processing: Templates XLSX-20250317T191257Z-001.zip
+2025-11-13 01:36:43 INFO    : Cache miss for Templates XLSX-20250317T191257Z-001.zip. Starting extraction.
+2025-11-13 01:36:43 INFO    : Extraction finished for Templates XLSX-20250317T191257Z-001.zip in 0.00s (chars=0)
+2025-11-13 01:36:43 WARNING : Empty content or unsupported file type: Templates XLSX-20250317T191257Z-001.zip
+2025-11-13 01:36:43 INFO    : Cache miss for TheVisionBoardExtended.pptx. Starting extraction.
+2025-11-13 01:36:43 INFO    : Processing: Templates PPTX-20250317T191325Z-001.zip
+2025-11-13 01:36:43 INFO    : Cache miss for Product-canvas.pptx. Starting extraction.
+2025-11-13 01:36:43 WARNING : PPTX file /Users/coelhotv/Dropbox/_courses/__product-dev/TheVisionBoardExtended.pptx had no readable text frames.
+2025-11-13 01:36:43 INFO    : Extraction finished for TheVisionBoardExtended.pptx in 0.01s (chars=0)
+2025-11-13 01:36:43 WARNING : Empty content or unsupported file type: TheVisionBoardExtended.pptx
+2025-11-13 01:36:43 INFO    : Cache miss for story-canvas.pptx. Starting extraction.
+2025-11-13 01:36:43 INFO    : Processing: Templates PDF-20250317T191414Z-001.zip
+2025-11-13 01:36:43 WARNING : PPTX file /Users/coelhotv/Dropbox/_courses/__product-dev/Product-canvas.pptx had no readable text frames.
+2025-11-13 01:36:43 INFO    : Extraction finished for Product-canvas.pptx in 0.01s (chars=0)
+2025-11-13 01:36:43 WARNING : Empty content or unsupported file type: Product-canvas.pptx
+2025-11-13 01:36:43 INFO    : Processing: Value-Proposition-Canvas.pptx
+2025-11-13 01:36:43 INFO    : Cache miss for Templates PDF-20250317T191414Z-001.zip. Starting extraction.
+2025-11-13 01:36:43 INFO    : Extraction finished for Templates PDF-20250317T191414Z-001.zip in 0.00s (chars=0)
+2025-11-13 01:36:43 WARNING : Empty content or unsupported file type: Templates PDF-20250317T191414Z-001.zip
+2025-11-13 01:36:43 WARNING : PPTX file /Users/coelhotv/Dropbox/_courses/__product-dev/story-canvas.pptx had no readable text frames.
+2025-11-13 01:36:43 INFO    : Extraction finished for story-canvas.pptx in 0.01s (chars=0)
+2025-11-13 01:36:43 WARNING : Empty content or unsupported file type: story-canvas.pptx
+2025-11-13 01:36:43 INFO    : Processing: Business Model Process Workbook Template.pptx
+2025-11-13 01:36:43 INFO    : Cache miss for Value-Proposition-Canvas.pptx. Starting extraction.
+2025-11-13 01:36:43 INFO    : Processing: the-melt-frame-canvas.pptx
+2025-11-13 01:36:43 INFO    : Cache miss for the-melt-frame-canvas.pptx. Starting extraction.
+2025-11-13 01:36:43 INFO    : Cache miss for Business Model Process Workbook Template.pptx. Starting extraction.
+2025-11-13 01:36:43 WARNING : PPTX file /Users/coelhotv/Dropbox/_courses/__product-dev/Value-Proposition-Canvas.pptx had no readable text frames.
+2025-11-13 01:36:43 INFO    : Extraction finished for Value-Proposition-Canvas.pptx in 0.01s (chars=0)
+2025-11-13 01:36:43 WARNING : Empty content or unsupported file type: Value-Proposition-Canvas.pptx
+2025-11-13 01:36:43 INFO    : Processing: customer_journey_canvas.pptx
+2025-11-13 01:36:43 WARNING : PPTX file /Users/coelhotv/Dropbox/_courses/__product-dev/the-melt-frame-canvas.pptx had no readable text frames.
+2025-11-13 01:36:43 INFO    : Extraction finished for the-melt-frame-canvas.pptx in 0.01s (chars=0)
+2025-11-13 01:36:43 WARNING : Empty content or unsupported file type: the-melt-frame-canvas.pptx
+2025-11-13 01:36:43 INFO    : Cache miss for customer_journey_canvas.pptx. Starting extraction.
+2025-11-13 01:36:43 WARNING : PPTX file /Users/coelhotv/Dropbox/_courses/__product-dev/customer_journey_canvas.pptx had no readable text frames.
+2025-11-13 01:36:43 INFO    : Extraction finished for customer_journey_canvas.pptx in 0.01s (chars=0)
+2025-11-13 01:36:43 WARNING : Empty content or unsupported file type: customer_journey_canvas.pptx
+2025-11-13 01:36:43 INFO    : Extraction finished for Business Model Process Workbook Template.pptx in 0.02s (chars=4078)
+2025-11-13 01:36:43 INFO    : Cache miss for Templates PPTX-20250317T191325Z-001.zip. Starting extraction.
+2025-11-13 01:36:43 INFO    : Extraction finished for Templates PPTX-20250317T191325Z-001.zip in 0.00s (chars=0)
+2025-11-13 01:36:43 WARNING : Empty content or unsupported file type: Templates PPTX-20250317T191325Z-001.zip
+2025-11-13 01:36:50 INFO    : Ollama chat success model=gemma3:4b file=Business Model Process Workbook Template.pptx req=14040d4f3546402891bb49099d26e262 duration=7.28s prompt_chars=5246
+2025-11-13 01:36:50 INFO    : Moved: /Users/coelhotv/Dropbox/_courses/__product-dev/Business Model Process Workbook Template.pptx -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/BusinessModelDesign/Business Model Process Workbook Template.pptx
+2025-11-13 01:36:50 INFO    : Classification for Business Model Process Workbook Template.pptx complete. Category=BusinessModelDesign Filename=Business Model Process Workbook Template.pptx Cached=False
+2025-11-13 01:36:50 INFO    : Success: Business Model Process Workbook Template.pptx -> BusinessModelDesign (7.31s)
+2025-11-13 01:36:50 INFO    : Total files: 10, Successful: 1, Failed: 9
+2025-11-13 01:36:50 INFO    : Total time: 7.34s, Avg per file: 0.73s
+2025-11-13 01:36:50 INFO    : Post-run stats: {'total_processed': 3, 'by_category': [<sqlite3.Row object at 0x1099ea810>, <sqlite3.Row object at 0x1099ea950>], 'cache_hit_rate': 0.0, 'avg_processing_time': 12.566102663675943}
