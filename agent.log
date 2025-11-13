@@ -1147,3 +1147,43 @@ TypeError: expected str, bytes or os.PathLike object, not NoneType
 2025-11-13 02:48:39 INFO    : Total files: 19, Successful: 12, Failed: 7
 2025-11-13 02:48:39 INFO    : Total time: 131.09s, Avg per file: 6.90s
 2025-11-13 02:48:39 INFO    : Post-run stats: {'total_processed': 131, 'by_category': [<sqlite3.Row object at 0x10a1ae150>, <sqlite3.Row object at 0x10a1ae330>, <sqlite3.Row object at 0x10a1ae550>, <sqlite3.Row object at 0x10a1ae2f0>, <sqlite3.Row object at 0x10a1ae350>, <sqlite3.Row object at 0x10a1ae650>, <sqlite3.Row object at 0x109d16130>, <sqlite3.Row object at 0x109d16a10>, <sqlite3.Row object at 0x10a3eaf70>, <sqlite3.Row object at 0x10a3ead10>, <sqlite3.Row object at 0x10a3eae50>, <sqlite3.Row object at 0x10a3ea610>, <sqlite3.Row object at 0x10a3eacf0>, <sqlite3.Row object at 0x10a3ead50>, <sqlite3.Row object at 0x10a3eacd0>, <sqlite3.Row object at 0x10a3eaeb0>, <sqlite3.Row object at 0x10a3ead70>, <sqlite3.Row object at 0x10a3eaef0>], 'cache_hit_rate': 3.0534351145038165, 'avg_processing_time': 45.72354453938608}
+2025-11-13 03:02:01 INFO    : Configuration loaded from config.yaml
+2025-11-13 03:02:01 INFO    : ============================================================
+2025-11-13 03:02:01 INFO    : FILE ORGANIZATION AI AGENT STARTED
+2025-11-13 03:02:01 INFO    : ============================================================
+2025-11-13 03:02:01 INFO    : Inbox: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs
+2025-11-13 03:02:01 INFO    : Output: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles
+2025-11-13 03:02:01 INFO    : AI Model: gemma3:4b
+2025-11-13 03:02:01 INFO    : Max Workers: 4
+2025-11-13 03:02:01 INFO    : Existing categories: ['Innovation', 'PaymentProducts', 'ProductManagement', 'PlatformsBusiness', 'Prompt Engineering', 'UX', 'ProductMetrics', 'ResearchPapers', 'ProductDesign', 'AiAgents', 'ValueProposition', 'SuperApps', 'BusinessModelDesign']
+2025-11-13 03:02:01 INFO    : Found 6 files to process
+2025-11-13 03:02:01 INFO    : Processing: IMG_0348.heic
+2025-11-13 03:02:01 INFO    : Processing: ai_prompt_humanize_card.md
+2025-11-13 03:02:01 INFO    : Processing: toma-toma.mp3
+2025-11-13 03:02:01 INFO    : Processing: IMG_9324.mov
+2025-11-13 03:02:01 INFO    : Cache miss for ai_prompt_humanize_card.md. Starting extraction.
+2025-11-13 03:02:01 INFO    : Extraction finished for ai_prompt_humanize_card.md in 0.00s (chars=4241)
+2025-11-13 03:02:01 INFO    : Cache miss for IMG_9324.mov. Starting extraction.
+2025-11-13 03:02:01 INFO    : Extraction finished for IMG_9324.mov in 0.00s (chars=0)
+2025-11-13 03:02:01 WARNING : Empty content or unsupported file type: IMG_9324.mov
+2025-11-13 03:02:01 INFO    : Processing: Planilha sem titulo.xlsx
+2025-11-13 03:02:01 INFO    : Cache miss for IMG_0348.heic. Starting extraction.
+2025-11-13 03:02:01 INFO    : Extraction finished for IMG_0348.heic in 0.00s (chars=0)
+2025-11-13 03:02:01 WARNING : Empty content or unsupported file type: IMG_0348.heic
+2025-11-13 03:02:01 INFO    : Processing: 2017-03-27-AUDIO-00038970.mp3
+2025-11-13 03:02:01 INFO    : Cache miss for Planilha sem titulo.xlsx. Starting extraction.
+2025-11-13 03:02:01 INFO    : Extraction finished for Planilha sem titulo.xlsx in 0.00s (chars=0)
+2025-11-13 03:02:01 WARNING : Empty content or unsupported file type: Planilha sem titulo.xlsx
+2025-11-13 03:02:01 INFO    : Cache miss for 2017-03-27-AUDIO-00038970.mp3. Starting extraction.
+2025-11-13 03:02:01 INFO    : Extraction finished for 2017-03-27-AUDIO-00038970.mp3 in 0.00s (chars=0)
+2025-11-13 03:02:01 WARNING : Empty content or unsupported file type: 2017-03-27-AUDIO-00038970.mp3
+2025-11-13 03:02:01 INFO    : Cache miss for toma-toma.mp3. Starting extraction.
+2025-11-13 03:02:01 INFO    : Extraction finished for toma-toma.mp3 in 0.00s (chars=0)
+2025-11-13 03:02:01 WARNING : Empty content or unsupported file type: toma-toma.mp3
+2025-11-13 03:02:09 INFO    : Ollama chat success model=gemma3:4b file=ai_prompt_humanize_card.md req=611f1203ed8b4127b11bdbf082e9395f duration=7.98s prompt_chars=5414
+2025-11-13 03:02:09 INFO    : Moved: /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/ai_prompt_humanize_card.md -> /Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/OrganizedFiles/Prompt Engineering/ai_prompt_humanize_card.md
+2025-11-13 03:02:09 INFO    : Classification for ai_prompt_humanize_card.md complete. Category=Prompt Engineering Cached=False
+2025-11-13 03:02:09 INFO    : Success: ai_prompt_humanize_card.md -> Prompt Engineering (7.99s)
+2025-11-13 03:02:09 INFO    : Total files: 6, Successful: 1, Failed: 5
+2025-11-13 03:02:09 INFO    : Total time: 7.99s, Avg per file: 1.33s
+2025-11-13 03:02:09 INFO    : Post-run stats: {'total_processed': 132, 'by_category': [<sqlite3.Row object at 0x107b4f690>, <sqlite3.Row object at 0x107ba75f0>, <sqlite3.Row object at 0x107ba7650>, <sqlite3.Row object at 0x107ba76d0>, <sqlite3.Row object at 0x107ba7710>, <sqlite3.Row object at 0x107b4f570>, <sqlite3.Row object at 0x107ba75b0>, <sqlite3.Row object at 0x107ba7490>, <sqlite3.Row object at 0x107ba7670>, <sqlite3.Row object at 0x107ba75d0>, <sqlite3.Row object at 0x107ba7610>, <sqlite3.Row object at 0x107ba7630>, <sqlite3.Row object at 0x107ba7590>, <sqlite3.Row object at 0x107ba7350>, <sqlite3.Row object at 0x107ba76f0>, <sqlite3.Row object at 0x107ba7690>, <sqlite3.Row object at 0x107ba7730>, <sqlite3.Row object at 0x107ba7750>], 'cache_hit_rate': 3.0303030303030303, 'avg_processing_time': 45.43765465599118}
