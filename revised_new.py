@@ -55,7 +55,10 @@ IGNORE_DIRS = ['_Unprocessed', '_Ignored']
 MAX_CONTENT_LENGTH = 5000
 MAX_WORKERS = 1
 
-CONFIG_PATH = "config.yaml"
+DEFAULT_DATA_DIR = Path(os.environ.get("AI_SMART_DATA_DIR") or Path.home() / ".ai-smart-folders-data").expanduser()
+DEFAULT_CONFIG_PATH = Path(os.environ.get("AI_SMART_CONFIG_PATH") or DEFAULT_DATA_DIR / "config.yaml").expanduser()
+CONFIG_PATH = DEFAULT_CONFIG_PATH
+DATA_DIR_PATH = DEFAULT_DATA_DIR
 
 # Logging setup - minimal to ensure our logger variable exists
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s", force=1)
@@ -88,19 +91,22 @@ class TerminalFilter(logging.Filter):
         return any(msg.startswith(prefix) for prefix in CONSOLE_INFO_PREFIXES)
 
 
-def load_config(config_path: str = CONFIG_PATH) -> None:
+def load_config(config_path: Optional[str] = None) -> None:
     """Load configuration from YAML if present (overrides defaults)."""
     global INBOX_DIR, ORGANIZED_DIR, OLLAMA_MODEL, IGNORE_DIRS, MAX_CONTENT_LENGTH, MAX_WORKERS
+    global DATA_DIR_PATH
 
-    if not os.path.exists(config_path):
-        logger.debug("No config file at %s, using defaults.", config_path)
+    candidate = Path(config_path) if config_path else CONFIG_PATH
+    candidate = candidate.expanduser()
+    if not candidate.exists():
+        logger.debug("No config file at %s, using defaults.", candidate)
         return
 
     try:
-        with open(config_path, "r", encoding="utf-8") as f:
+        with open(candidate, "r", encoding="utf-8") as f:
             data = yaml.safe_load(f) or {}
     except Exception as e:
-        logger.warning("Failed reading config %s: %s", config_path, e)
+        logger.warning("Failed reading config %s: %s", candidate, e)
         return
 
     INBOX_DIR = str(Path(data.get("inbox_dir", INBOX_DIR)))
@@ -110,11 +116,18 @@ def load_config(config_path: str = CONFIG_PATH) -> None:
     MAX_CONTENT_LENGTH = int(data.get("max_content_length", MAX_CONTENT_LENGTH))
     MAX_WORKERS = int(data.get("max_workers", MAX_WORKERS))
 
-    logger.info("Configuration loaded from %s", config_path)
+    data_dir = data.get("data_dir")
+    if data_dir:
+        DATA_DIR_PATH = Path(data_dir).expanduser()
+
+    logger.info("Configuration loaded from %s", candidate)
 
 
-def setup_logging():
-    """Configure file and console handlers for agent and API logs."""
+def setup_logging(data_root: Path) -> Tuple[logging.Logger, logging.Logger]:
+    """Configure file and console handlers for agent and API logs inside `data_root`."""
+    data_root.mkdir(parents=True, exist_ok=True)
+    agent_log_path = data_root / "agent.log"
+    api_log_path = data_root / "api.log"
     # Agent logger
     agent_logger = logging.getLogger("FileAgent")
     agent_logger.setLevel(logging.INFO)
@@ -124,7 +137,7 @@ def setup_logging():
     # Avoid adding handlers multiple times in case this is called twice
     if not agent_logger.handlers:
         fmt = logging.Formatter("%(asctime)s %(levelname)-8s: %(message)s", "%Y-%m-%d %H:%M:%S")
-        fh = logging.FileHandler("agent.log", encoding="utf-8")
+        fh = logging.FileHandler(agent_log_path, encoding="utf-8")
         fh.setFormatter(fmt)
         sh = logging.StreamHandler()
         sh.setFormatter(fmt)
@@ -138,7 +151,7 @@ def setup_logging():
     api_logger.propagate = False
 
     if not api_logger.handlers:
-        api_fh = logging.FileHandler("api.log", encoding="utf-8")
+        api_fh = logging.FileHandler(api_log_path, encoding="utf-8")
         api_fh.setFormatter(logging.Formatter("%(asctime)s --- %(message)s", "%Y-%m-%d %H:%M:%S"))
         api_logger.addHandler(api_fh)
 
@@ -175,8 +188,11 @@ def enqueue_api_log(request_log: str, response_log: str) -> None:
 class FileClassificationCache:
     """Thread-safe cache for classification results keyed by file MD5."""
 
-    def __init__(self, cache_file: str = "file_cache.pkl"):
-        self.cache_file = cache_file
+    def __init__(self, cache_file: Optional[str] = None):
+        if cache_file:
+            self.cache_file = cache_file
+        else:
+            self.cache_file = str(DATA_DIR_PATH / "file_cache.pkl")
         self.lock = threading.RLock()
         self.logger = logging.getLogger("Cache")
         self.cache: Dict[str, Dict[str, Any]] = self._load_cache()
@@ -245,11 +261,14 @@ class FileClassificationCache:
 class FileDatabase:
     """Thread-safe SQLite wrapper to log file movements and errors."""
 
-    def __init__(self, db_path: str = "file_organization.db"):
-        self.db_path = db_path
+    def __init__(self, db_path: Optional[str] = None):
+        if db_path:
+            self.db_path = db_path
+        else:
+            self.db_path = str(DATA_DIR_PATH / "file_organization.db")
         self.lock = threading.RLock()
         self.logger = logging.getLogger("Database")
-        self.conn = sqlite3.connect(db_path, check_same_thread=False)
+        self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self.create_tables()
 
@@ -1038,8 +1057,8 @@ def main(logger: logging.Logger) -> None:
 
 
 if __name__ == "__main__":
-    logger, _ = setup_logging()
     load_config()
+    logger, _ = setup_logging(DATA_DIR_PATH)
     if not check_prereqs(logger):
         logger.critical("Pre-run checks failed. Fix issues then retry.")
         raise SystemExit(1)

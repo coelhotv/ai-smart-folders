@@ -1,0 +1,16 @@
+# Runtime artifacts and caches
+agent.log
+api.log
+file_cache.pkl
+file_organization.db
+
+# Local configuration to keep personal paths out of the repo
+config.yaml
+.ai-smart-folders-config.yaml
+.env
+
+# Standard Python ignores
+__pycache__/
+*.py[cod]
+.venv/
+.DS_Store

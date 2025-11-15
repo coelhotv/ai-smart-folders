@@ -1,0 +1,10 @@
+# Copy this file to ~/.ai-smart-folders-config.yaml (or point AI_SMART_CONFIG_PATH there) and edit as needed.
+inbox_dir: ~/Inbox
+organized_dir: ~/OrganizedFiles
+ollama_model: gemma3:270m
+ignore_dirs:
+  - _Unprocessed
+  - _Ignored
+data_dir: ~/.ai-smart-folders-data
+max_content_length: 20000
+max_workers: 4
