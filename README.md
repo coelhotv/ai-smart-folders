@@ -1,6 +1,7 @@
 # AI Smart Folders
 
-AI Smart Folders is a Python-based assistant that scans an inbox directory, summarizes files with optional AI-assisted metadata, and safely routes them into an organized destination structure.
+AI Smart Folders is my first attempt to play with local AI models and LLMs functions. 
+It's a Python-based assistant that scans an inbox directory, summarizes files with optional AI-assisted metadata, and safely routes them into an organized destination structure.
 
 ## Features
 - Loads configuration overrides from `data_dir/config.yaml` inside your runtime directory (default `~/.ai-smart-folders-data/config.yaml`), or from the path set in `AI_SMART_CONFIG_PATH`, falling back to sane defaults for the inbox, output directory, model name, ignored folders, and worker count.
@@ -34,8 +35,16 @@ python -m pip install ollama pypdf python-docx pytesseract Pillow python-pptx
 
 ## Usage
 
+Run the production-ready agent with logging, caching, and SQLite bookkeeping:
+
 ```bash
-python revised_new.py
+python smart-folders_v2.py
+```
+
+There is also a lightweight, single-threaded helper in `smart-folders_v1.py` that can be used for experimentation:
+
+```bash
+python smart-folders_v1.py
 ```
 
 ## Data & Logging
