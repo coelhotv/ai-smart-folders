@@ -48,6 +48,7 @@ except Exception:
     Presentation = None
 
 # --- CONFIGURATION (defaults) ---
+# If no config file overrides are supplied, these paths and limits keep things sane.
 INBOX_DIR = str(Path.home() / "Dropbox" / "_courses")
 ORGANIZED_DIR = str(Path.home() / "OrganizedFiles")
 OLLAMA_MODEL = "gemma3:270m"
@@ -98,6 +99,7 @@ def load_config(config_path: Optional[str] = None) -> None:
 
     candidate = Path(config_path) if config_path else CONFIG_PATH
     candidate = candidate.expanduser()
+    # Use caller-supplied config path when available, otherwise fall back to our default.
     if not candidate.exists():
         logger.debug("No config file at %s, using defaults.", candidate)
         return
@@ -109,6 +111,7 @@ def load_config(config_path: Optional[str] = None) -> None:
         logger.warning("Failed reading config %s: %s", candidate, e)
         return
 
+    # Replace defaults with any values the user provided.
     INBOX_DIR = str(Path(data.get("inbox_dir", INBOX_DIR)))
     ORGANIZED_DIR = str(Path(data.get("organized_dir", ORGANIZED_DIR)))
     OLLAMA_MODEL = data.get("ollama_model", OLLAMA_MODEL)
@@ -116,6 +119,7 @@ def load_config(config_path: Optional[str] = None) -> None:
     MAX_CONTENT_LENGTH = int(data.get("max_content_length", MAX_CONTENT_LENGTH))
     MAX_WORKERS = int(data.get("max_workers", MAX_WORKERS))
 
+    # Let users override where runtime data (logs, caches) end up.
     data_dir = data.get("data_dir")
     if data_dir:
         DATA_DIR_PATH = Path(data_dir).expanduser()
@@ -128,6 +132,7 @@ def setup_logging(data_root: Path) -> Tuple[logging.Logger, logging.Logger]:
     data_root.mkdir(parents=True, exist_ok=True)
     agent_log_path = data_root / "agent.log"
     api_log_path = data_root / "api.log"
+    # Keep log files under the configured data directory so debugging info is easy to find.
     # Agent logger
     agent_logger = logging.getLogger("FileAgent")
     agent_logger.setLevel(logging.INFO)
@@ -167,6 +172,7 @@ def start_api_log_dispatcher(api_logger: logging.Logger) -> None:
         return
 
     def dispatcher():
+        # Keep taking request/response logs out of the queue and write them in order.
         while True:
             try:
                 request_log, response_log = API_LOG_QUEUE.get()
@@ -197,6 +203,7 @@ class FileClassificationCache:
         self.logger = logging.getLogger("Cache")
         self.cache: Dict[str, Dict[str, Any]] = self._load_cache()
 
+    # Grab the saved cache from disk so we can reuse classifications between runs.
     def _load_cache(self) -> Dict[str, Dict[str, Any]]:
         if not os.path.exists(self.cache_file):
             return {}
@@ -209,12 +216,14 @@ class FileClassificationCache:
             self.logger.warning("Failed to load cache (%s). Starting fresh.", e)
             return {}
 
+    # Swap in the temp file so we never leave partial cache writes around.
     def _atomic_write(self, data: Dict[str, Any]) -> None:
         tmp = f"{self.cache_file}.tmp"
         with open(tmp, "wb") as f:
             pickle.dump(data, f)
         os.replace(tmp, self.cache_file)
 
+    # Keep the in-memory state and file copy aligned.
     def save_cache(self) -> None:
         with self.lock:
             try:
@@ -222,6 +231,7 @@ class FileClassificationCache:
             except Exception as e:
                 self.logger.error("Failed to save cache: %s", e)
 
+    # Generate a stable MD5 fingerprint so we can reuse past predictions.
     def get_file_hash(self, file_path: str) -> Optional[str]:
         try:
             hasher = hashlib.md5()
@@ -233,6 +243,7 @@ class FileClassificationCache:
             self.logger.error("Failed to hash %s: %s", file_path, e)
             return None
 
+    # Lookup cached category by the file's hash under lock.
     def get(self, file_path: str, filename: str) -> Optional[Dict[str, Any]]:
         h = self.get_file_hash(file_path)
         if not h:
@@ -244,6 +255,7 @@ class FileClassificationCache:
                 return entry
             return None
 
+    # Record a confirmed category for a file hash so future runs skip the model.
     def set(self, file_path: str, classification_data: Dict[str, Any]) -> None:
         h = self.get_file_hash(file_path)
         if not h or not classification_data:
@@ -272,9 +284,11 @@ class FileDatabase:
         self.conn.row_factory = sqlite3.Row
         self.create_tables()
 
+    # Make sure the tables we rely on are present before logging anything.
     def create_tables(self) -> None:
         with self.lock:
             cur = self.conn.cursor()
+            # Track every move so we can audit history and cache stats.
             cur.execute('''
             CREATE TABLE IF NOT EXISTS file_movements (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -300,6 +314,7 @@ class FileDatabase:
                 file_count INTEGER DEFAULT 0
             );
             ''')
+            # Indexes help us find files and categories fast when reporting stats.
             cur.execute('CREATE INDEX IF NOT EXISTS idx_file_hash ON file_movements(file_hash);')
             cur.execute('CREATE INDEX IF NOT EXISTS idx_category ON file_movements(category);')
             self.conn.commit()
@@ -309,6 +324,8 @@ class FileDatabase:
                           file_hash: Optional[str] = None, cached: bool = False,
                           processing_time: Optional[float] = None,
                           file_size: Optional[int] = None) -> None:
+        # Record each successful move plus a fast category counter for dashboards.
+        # If we don't already know the file size, probe it for completeness.
         if file_size is None:
             try:
                 probe_path = new_path if new_path and os.path.exists(new_path) else original_path
@@ -347,6 +364,7 @@ class FileDatabase:
                 logging.getLogger("Database").error("Failed to log file movement: %s", e)
 
     def log_error(self, file_path: str, error_message: str, category: str = "ERROR") -> None:
+        # Keep errors in the same table so the operator can inspect failures.
         with self.lock:
             try:
                 self.conn.execute('''
@@ -357,6 +375,7 @@ class FileDatabase:
             except Exception as e:
                 logging.getLogger("Database").error("Failed to log error: %s", e)
 
+    # Build counters we can surface at the end of a run.
     def get_statistics(self) -> Dict[str, Any]:
         with self.lock:
             cur = self.conn.cursor()
@@ -384,6 +403,7 @@ class FileDatabase:
             stats['avg_processing_time'] = cur.fetchone()[0]
             return stats
 
+    # Let callers review recent processing for debugging or UI.
     def get_file_history(self, filename: Optional[str] = None):
         with self.lock:
             cur = self.conn.cursor()
@@ -396,6 +416,7 @@ class FileDatabase:
                 cur.execute('SELECT * FROM file_movements ORDER BY processed_date DESC LIMIT 100;')
             return cur.fetchall()
 
+    # Clean up the SQLite connection when the agent finishes.
     def close(self) -> None:
         with self.lock:
             self.conn.close()
@@ -403,6 +424,7 @@ class FileDatabase:
 
 def retry(exceptions, tries: int = 3, delay: float = 1.0, backoff: int = 2):
     """Retry decorator with exponential backoff."""
+    # Wraps a function so that transient errors get a few retries before failing.
     def decorator(func):
         import functools
         @functools.wraps(func)
@@ -434,6 +456,7 @@ def retry(exceptions, tries: int = 3, delay: float = 1.0, backoff: int = 2):
 
 
 def sanitize_category(name: Optional[str]) -> str:
+    # Strip characters that break folder names and enforce a fallback.
     if not name or not isinstance(name, str):
         return "_Unprocessed"
     safe = re.sub(r'[<>:"/\\|?*\x00-\x1f]+', '', name).strip()
@@ -442,6 +465,7 @@ def sanitize_category(name: Optional[str]) -> str:
 
 
 def unique_dest_path(folder: str, filename: str) -> str:
+    # Add a numeric suffix when a destination file already exists to avoid overwriting.
     base, ext = os.path.splitext(filename)
     candidate = filename
     n = 1
@@ -452,6 +476,7 @@ def unique_dest_path(folder: str, filename: str) -> str:
 
 
 def is_tesseract_available() -> bool:
+    # Confirm OCR engine is reachable via the Python binding or CLI.
     if pytesseract:
         try:
             _ = pytesseract.get_tesseract_version()
@@ -497,6 +522,7 @@ def run_soffice_conversion(src_path: str, target_format: str, out_dir: str, logg
 
 def _pdf_ocr_with_pdf2image(pdf_path: str, logger: logging.Logger) -> Optional[str]:
     """Attempt to rasterize PDF pages and OCR each page (requires pdf2image)."""
+    # A backup path when normal text extraction from a PDF fails.
     try:
         from pdf2image import convert_from_path
     except Exception as e:
@@ -520,6 +546,7 @@ def _pdf_ocr_with_pdf2image(pdf_path: str, logger: logging.Logger) -> Optional[s
 
 
 def extract_text(file_path: str, logger: logging.Logger) -> Optional[str]:
+    # Try format-specific extraction so we can feed readable text to the AI.
     ext = os.path.splitext(file_path)[1].lower()
     text_parts: List[str] = []
     try:
@@ -644,6 +671,7 @@ def extract_text(file_path: str, logger: logging.Logger) -> Optional[str]:
 
 
 def get_existing_categories(dir_path: str) -> List[str]:
+    # Scan the target folders so we can reuse prior category names in prompts.
     cats: List[str] = []
     try:
         for item in os.listdir(dir_path):
@@ -660,6 +688,7 @@ def get_existing_categories(dir_path: str) -> List[str]:
 @retry(Exception, tries=3, delay=1, backoff=2)
 def call_ollama_chat(model: str, messages: list, fmt: str = 'json', **kwargs) -> Any:
     """Call ollama.chat with retries (if ollama available)."""
+    # This wrapper adds logging and retries for every Ollama request.
     if ollama is None:
         raise RuntimeError("Ollama client not available (import failed)")
     logger_obj = kwargs.get("logger", logging.getLogger("OllamaAPI"))
@@ -699,6 +728,7 @@ def get_classification_from_ollama(
     existing_categories: List[str],
     logger: logging.Logger,
 ) -> Optional[dict]:
+    # Build a prompt and ask Ollama to name a fitting folder label.
     if len(file_content) > MAX_CONTENT_LENGTH:
         # Keep a balanced head/tail preview but never exceed MAX_CONTENT_LENGTH
         head_len = (MAX_CONTENT_LENGTH * 2) // 3
@@ -837,6 +867,7 @@ Respond ONLY with a JSON object like:
 
 
 def move_file(original_path: str, category: str, filename: str, logger: logging.Logger) -> Optional[str]:
+    # If category or filename is missing, fall back to the default catch-all folder.
     if not category or not filename:
         category = "_Unprocessed"
     safe_category = sanitize_category(category)
@@ -854,6 +885,7 @@ def move_file(original_path: str, category: str, filename: str, logger: logging.
 
 
 def check_prereqs(logger: logging.Logger) -> bool:
+    # Make sure the required AI tooling and helper programs are available before running.
     if ollama is None:
         logger.critical("Ollama client not importable. Ensure ollama is installed and available.")
         return False
@@ -883,6 +915,7 @@ def process_single_file(
     logger: logging.Logger,
     categories_lock: threading.Lock
 ) -> Dict[str, Any]:
+    # Handle one file: extract text, classify, move, and record stats.
     start_time = time.time()
     file_path = os.path.join(INBOX_DIR, filename)
     result = {
@@ -897,6 +930,7 @@ def process_single_file(
     logger.info("Processing: %s", filename)
 
     try:
+        # Try to reuse a previous category if the file has already been seen.
         cached = cache.get(file_path, filename)
         if cached:
             classification = cached
@@ -908,6 +942,7 @@ def process_single_file(
             )
         else:
             logger.info("Cache miss for %s. Starting extraction.", filename)
+            # Gather the raw words we will show the model.
             extract_start = time.perf_counter()
             content = extract_text(file_path, logger)
             extract_duration = time.perf_counter() - extract_start
@@ -917,6 +952,7 @@ def process_single_file(
                 extract_duration,
                 len(content or "")
             )
+            # If extraction gave nothing, log and move on without calling AI.
             if not content or content.isspace():
                 msg = "Empty content or unsupported file type"
                 logger.warning(msg + ": %s", filename)
@@ -998,15 +1034,18 @@ def main(logger: logging.Logger) -> None:
     os.makedirs(INBOX_DIR, exist_ok=True)
     os.makedirs(ORGANIZED_DIR, exist_ok=True)
 
+    # Gather what folders already exist so the model can reuse names.
     existing_categories = get_existing_categories(ORGANIZED_DIR)
     categories_lock = threading.Lock()
     logger.info("Existing categories: %s", existing_categories)
 
+    # Only process ordinary files (nog dotfiles) sitting in the inbox.
     files_to_process = [
         f for f in os.listdir(INBOX_DIR)
         if os.path.isfile(os.path.join(INBOX_DIR, f)) and not f.startswith('.')
     ]
 
+    # Optional environment knob to isolate processing to one file for debugging.
     debug_target = os.environ.get("DEBUG_SINGLE_FILE")
     if debug_target:
         debug_path = os.path.join(INBOX_DIR, debug_target)
@@ -1016,6 +1055,7 @@ def main(logger: logging.Logger) -> None:
         else:
             logger.warning("DEBUG_SINGLE_FILE=%s but file not found in inbox.", debug_target)
 
+    # Nothing to do? log a summary and exit cleanly.
     if not files_to_process:
         logger.info("No files found to organize.")
         stats = db.get_statistics()
@@ -1029,6 +1069,7 @@ def main(logger: logging.Logger) -> None:
     failed = 0
     start = time.time()
 
+    # Process files in parallel according to the max workers the config allows.
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
         future_to_file = {
             executor.submit(process_single_file, f, existing_categories, cache, db, logger, categories_lock): f
@@ -1050,6 +1091,7 @@ def main(logger: logging.Logger) -> None:
     logger.info("Total files: %d, Successful: %d, Failed: %d", len(files_to_process), successful, failed)
     logger.info("Total time: %.2fs, Avg per file: %.2fs", total_time, total_time / max(1, len(files_to_process)))
 
+    # Capture run stats for the log so the user can review later.
     stats = db.get_statistics()
     logger.info("Post-run stats: %s", stats)
 
@@ -1057,6 +1099,7 @@ def main(logger: logging.Logger) -> None:
 
 
 if __name__ == "__main__":
+    # Entry point: load the config, set up logging, check dependencies, then run.
     load_config()
     logger, _ = setup_logging(DATA_DIR_PATH)
     if not check_prereqs(logger):
