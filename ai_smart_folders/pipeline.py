@@ -88,7 +88,7 @@ class SmartFoldersPipeline:
             envelope.metadata["decision_source"] = "cache"
             return "act"
 
-        extraction = extract(envelope.source_path)
+        extraction = extract(envelope.source_path, ocr_model=self.config.models.ocr_model)
         envelope.extracted_text = extraction.extracted_text
         envelope.metadata.update(extraction.metadata)
         envelope.extraction_quality = extraction.extraction_quality

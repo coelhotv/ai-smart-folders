@@ -7,10 +7,11 @@ from pydantic import BaseModel, Field
 
 
 class ModelSettings(BaseModel):
-    router_model: str = "gemma3:270m"
-    understanding_model: str = "gemma3:1b"
-    classification_model: str = "gemma3:1b"
-    fallback_model: Optional[str] = None
+    router_model: str = "granite4:1b-h"
+    understanding_model: str = "qwen3.5:4b"
+    classification_model: str = "qwen3.5:4b"
+    fallback_model: Optional[str] = "qwen3.5:9b-q4_K_M"
+    ocr_model: Optional[str] = "glm-ocr:q8_0"
 
 
 class ThresholdSettings(BaseModel):

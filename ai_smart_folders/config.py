@@ -28,6 +28,10 @@ def default_config_path() -> Path:
     if data_dir:
         return Path(data_dir).expanduser() / "config.yaml"
 
+    local_hidden = Path(".ai-smart-folders-config.yaml").resolve()
+    if local_hidden.exists():
+        return local_hidden
+
     local = Path("config.yaml").resolve()
     if local.exists():
         return local
@@ -51,7 +55,7 @@ def load_config(config_path: Path | None = None) -> AppConfig:
     env_overrides: Dict[str, Any] = {}
     if os.environ.get("AI_SMART_DATA_DIR"):
         env_overrides["data_dir"] = os.environ["AI_SMART_DATA_DIR"]
-    elif "data_dir" not in data and candidate.name == "config.yaml":
+    elif "data_dir" not in data and candidate.name in {"config.yaml", ".ai-smart-folders-config.yaml"}:
         env_overrides["data_dir"] = str(candidate.parent / ".ai-smart-folders-data")
 
     merged = _merge_dict(data, env_overrides)

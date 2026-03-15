@@ -4,6 +4,13 @@ AI Smart Folders e uma app local em Python para organizar arquivos com ajuda de 
 
 Hoje o projeto esta em transicao de um script monolitico para uma base modular mais robusta. O fluxo legado continua no repositorio, mas a nova espinha dorsal da app ja existe e esta sendo usada pela nova CLI.
 
+Defaults atuais de modelos no fluxo novo:
+- `router_model`: `granite4:1b-h`
+- `understanding_model`: `qwen3.5:4b`
+- `classification_model`: `qwen3.5:4b`
+- `fallback_model`: `qwen3.5:9b-q4_K_M`
+- `ocr_model`: `glm-ocr:q8_0`
+
 ## Estado atual
 
 ### O que a app ja faz
@@ -56,6 +63,7 @@ Principais modulos do fluxo novo:
   - `act`
 - prompts separados para entendimento e classificacao
 - regras deterministicas antes do LLM
+- OCR multimodal com `glm-ocr:q8_0` como padrao atual para imagens e PDFs escaneados, com fallback para `tesseract`
 - taxonomia em 2 niveis com aliases
 - pastas tecnicas:
   - `_NeedsReview`

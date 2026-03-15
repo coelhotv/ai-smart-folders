@@ -10,10 +10,11 @@ max_workers: 4
 prompt_version: v3
 
 models:
-  router_model: gemma3:270m
-  understanding_model: gemma3:1b
-  classification_model: gemma3:1b
-  fallback_model:
+  router_model: granite4:1b-h
+  understanding_model: qwen3.5:4b
+  classification_model: qwen3.5:4b
+  fallback_model: qwen3.5:9b-q4_K_M
+  ocr_model: glm-ocr:q8_0
 
 thresholds:
   review_confidence: 0.55

@@ -6,6 +6,7 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 from email import policy
 from email.parser import BytesParser
 from pathlib import Path
@@ -44,6 +45,11 @@ try:
     import extract_msg
 except Exception:
     extract_msg = None
+
+try:
+    import ollama
+except Exception:
+    ollama = None
 
 
 def sniff_mime_type(file_path: Path) -> Optional[str]:
@@ -95,7 +101,68 @@ def _strip_html(html: str) -> str:
     return re.sub(r"<[^>]+>", " ", html or "").strip()
 
 
-def _extract_pdf(file_path: Path) -> ExtractionResult:
+def _ocr_with_ollama_image(image_path: Path, model: Optional[str]) -> Optional[str]:
+    if not model or ollama is None:
+        return None
+    try:
+        response = ollama.chat(
+            model=model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": "Extract the readable text from this document image. Return plain text only.",
+                    "images": [image_path],
+                }
+            ],
+        )
+    except Exception:
+        return None
+
+    raw = None
+    if isinstance(response, dict):
+        raw = response.get("message", {}).get("content") if isinstance(response.get("message"), dict) else response.get("content")
+    else:
+        message = getattr(response, "message", None)
+        if isinstance(message, dict):
+            raw = message.get("content")
+        elif hasattr(message, "content"):
+            raw = getattr(message, "content")
+        elif hasattr(response, "content"):
+            raw = getattr(response, "content")
+    if not isinstance(raw, str):
+        return None
+    return raw.strip() or None
+
+
+def _ocr_pdf_pages_with_ollama(pdf_path: Path, model: Optional[str]) -> Optional[str]:
+    if not model or ollama is None:
+        return None
+    try:
+        from pdf2image import convert_from_path
+    except Exception:
+        return None
+
+    page_texts = []
+    temp_paths = []
+    try:
+        for index, page_image in enumerate(convert_from_path(str(pdf_path), dpi=200)):
+            with tempfile.NamedTemporaryFile(prefix=f"ai-smart-folders-page-{index}-", suffix=".png", delete=False) as tmp:
+                page_image.save(tmp.name, format="PNG")
+                temp_path = Path(tmp.name)
+                temp_paths.append(temp_path)
+            text = _ocr_with_ollama_image(temp_path, model)
+            if text:
+                page_texts.append(text)
+        return "\n".join(page_texts).strip() or None
+    finally:
+        for temp_path in temp_paths:
+            try:
+                temp_path.unlink()
+            except Exception:
+                pass
+
+
+def _extract_pdf(file_path: Path, ocr_model: Optional[str] = None) -> ExtractionResult:
     if pypdf is None:
         return ExtractionResult(errors=["pypdf not available"], extractor_name="pdf")
     try:
@@ -109,6 +176,14 @@ def _extract_pdf(file_path: Path) -> ExtractionResult:
             metadata={"pages": len(reader.pages)},
         )
         if joined:
+            return result
+
+        ollama_ocr_text = _ocr_pdf_pages_with_ollama(file_path, ocr_model)
+        if ollama_ocr_text:
+            result.extracted_text = ollama_ocr_text
+            result.extraction_quality = _quality_from_text(ollama_ocr_text)
+            result.ocr_used = True
+            result.metadata["ocr_engine"] = ocr_model
             return result
 
         if is_tesseract_available():
@@ -127,6 +202,8 @@ def _extract_pdf(file_path: Path) -> ExtractionResult:
             result.extracted_text = ocr_text or None
             result.extraction_quality = _quality_from_text(ocr_text)
             result.ocr_used = bool(ocr_text)
+            if ocr_text:
+                result.metadata["ocr_engine"] = "tesseract"
         return result
     except Exception as exc:
         return ExtractionResult(errors=[f"PDF extraction failed: {exc}"], extractor_name="pdf")
@@ -207,7 +284,17 @@ def _extract_ppt(file_path: Path) -> ExtractionResult:
     return result
 
 
-def _extract_image(file_path: Path) -> ExtractionResult:
+def _extract_image(file_path: Path, ocr_model: Optional[str] = None) -> ExtractionResult:
+    ollama_text = _ocr_with_ollama_image(file_path, ocr_model)
+    if ollama_text:
+        return ExtractionResult(
+            extracted_text=ollama_text,
+            extraction_quality=_quality_from_text(ollama_text),
+            extractor_name="image",
+            ocr_used=True,
+            metadata={"ocr_engine": ocr_model},
+        )
+
     if not is_tesseract_available():
         return ExtractionResult(errors=["tesseract not available"], extractor_name="image")
     if Image is None or pytesseract is None:
@@ -220,6 +307,7 @@ def _extract_image(file_path: Path) -> ExtractionResult:
             extraction_quality=_quality_from_text(text),
             extractor_name="image",
             ocr_used=True,
+            metadata={"ocr_engine": "tesseract"},
         )
     except Exception as exc:
         return ExtractionResult(errors=[f"Image OCR failed: {exc}"], extractor_name="image")
@@ -344,7 +432,7 @@ def _extract_msg(file_path: Path) -> ExtractionResult:
         return ExtractionResult(errors=[f"MSG extraction failed: {exc}"], extractor_name="msg")
 
 
-EXTRACTORS: Dict[str, Callable[[Path], ExtractionResult]] = {
+EXTRACTORS: Dict[str, Callable[..., ExtractionResult]] = {
     ".pdf": _extract_pdf,
     ".docx": _extract_docx,
     ".doc": _extract_doc,
@@ -368,14 +456,17 @@ EXTRACTORS: Dict[str, Callable[[Path], ExtractionResult]] = {
 }
 
 
-def extract(file_path: Path) -> ExtractionResult:
+def extract(file_path: Path, ocr_model: Optional[str] = None) -> ExtractionResult:
     extractor = EXTRACTORS.get(file_path.suffix.lower())
     if not extractor:
         return ExtractionResult(
             extractor_name="unsupported",
             errors=[f"Unsupported file type: {file_path.suffix.lower() or '<none>'}"],
         )
-    result = extractor(file_path)
+    if file_path.suffix.lower() in {".pdf", ".jpg", ".jpeg", ".png"}:
+        result = extractor(file_path, ocr_model=ocr_model)
+    else:
+        result = extractor(file_path)
     result.metadata.setdefault("mime_type", sniff_mime_type(file_path))
     result.metadata.setdefault("filename", file_path.name)
     return result
