@@ -1,8 +1,0 @@
-#!/bin/sh
-'''exec' "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/ai-smart-folders/.venv/bin/python3.14" "$0" "$@"
-' '''
-import sys
-from pytesseract.pytesseract import main
-if __name__ == '__main__':
-    sys.argv[0] = sys.argv[0].removesuffix('.exe')
-    sys.exit(main())
