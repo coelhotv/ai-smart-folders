@@ -1,4 +1,4 @@
-#!/Users/coelhotv/git/ai-smart-folders/.venv/bin/python3
+#!/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/ai-smart-folders/.venv/bin/python3.14
 
 ##############################################################################
 #
