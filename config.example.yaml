@@ -1,10 +1,35 @@
 # Copy this file to ~/.ai-smart-folders-config.yaml (or point AI_SMART_CONFIG_PATH there) and edit as needed.
 inbox_dir: ~/Inbox
 organized_dir: ~/OrganizedFiles
-ollama_model: gemma3:270m
+data_dir: ~/.ai-smart-folders-data
 ignore_dirs:
   - _Unprocessed
   - _Ignored
-data_dir: ~/.ai-smart-folders-data
 max_content_length: 20000
 max_workers: 4
+prompt_version: v3
+
+models:
+  router_model: gemma3:270m
+  understanding_model: gemma3:1b
+  classification_model: gemma3:1b
+  fallback_model:
+
+thresholds:
+  review_confidence: 0.55
+
+workers:
+  io: 4
+  llm: 1
+
+taxonomy:
+  level1_default: General
+  level2_default: Unsorted
+  aliases:
+    invoices: Invoices
+  level1_aliases:
+    financeiro: Finance
+    financial: Finance
+  level2_aliases:
+    receipt: Invoices
+    resumes: Resumes

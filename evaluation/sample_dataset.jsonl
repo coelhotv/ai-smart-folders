@@ -1,0 +1,2 @@
+{"source_path":"./samples/example_invoice.pdf","expected_category_l1":"Finance","expected_category_l2":"Invoices","expected_needs_review":false}
+{"source_path":"./samples/example_resume.docx","expected_category_l1":"Career","expected_category_l2":"Resumes","expected_needs_review":false}
