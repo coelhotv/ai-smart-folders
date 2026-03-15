@@ -23,7 +23,7 @@ Este plano agora serve como documento operacional do projeto e nao apenas como p
 
 ### Parcialmente concluido
 - extractors:
-  ja existem para PDF, DOCX, DOC, PPTX, PPT, TXT, MD, CSV, LOG, JSON, XML, HTML, JPG, JPEG e PNG
+  ja existem para PDF, DOCX, DOC, PPTX, PPT, TXT, MD, CSV, LOG, JSON, XML, HTML, XLSX, XLS, EML, MSG, JPG, JPEG e PNG
 - prompts:
   ja existe separacao entre understanding e classification, mas ainda falta sofisticar a normalizacao e a trilha de decisao
 - review flow:
@@ -71,8 +71,6 @@ Objetivo:
 - melhorar a qualidade do texto de entrada
 
 Escopo:
-- adicionar `XLSX/XLS`
-- adicionar `EML/MSG`
 - revisar tratamento de HTML/JSON/XML
 - reforcar MIME sniffing e fallbacks
 - melhorar OCR multipagina quando dependencias estiverem disponiveis
@@ -173,7 +171,6 @@ Continuamos adiando:
 
 ## Definicao de pronto para a proxima milestone
 Consideraremos a proxima milestone atingida quando:
-- `XLSX/XLS` e `EML/MSG` estiverem integrados
 - `dry-run` trouxer relatorio util por arquivo
 - benchmark puder ser rodado com dataset real pequeno
 - README e docs refletirem esse estado sem divergencia

@@ -111,8 +111,6 @@ Pendencias pequenas:
 Status: em andamento
 
 Proximo foco:
-- `XLSX/XLS`
-- `EML/MSG`
 - melhoria de OCR
 - tratamento melhor de MIME e encodings
 - extracao mais especializada por tipo

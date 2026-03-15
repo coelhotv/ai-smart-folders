@@ -76,6 +76,10 @@ Principais modulos do fluxo novo:
 - JSON
 - XML
 - HTML
+- XLSX
+- XLS
+- EML
+- MSG
 - JPG
 - JPEG
 - PNG
@@ -85,6 +89,8 @@ Principais modulos do fluxo novo:
 - dependencias do `requirements.txt`
 - `tesseract` para OCR quando usado
 - `soffice` para conversao de `.doc` e `.ppt` quando necessario
+- `openpyxl` para leitura nativa de `XLSX`
+- `extract-msg` para leitura nativa de `MSG`
 
 Instalacao:
 
@@ -130,8 +136,6 @@ python smart-folders_v2.py
 - tornar o benchmark util para regressao real
 
 ### Proximos passos
-- adicionar `XLSX/XLS`
-- adicionar `EML/MSG`
 - melhorar OCR multipagina
 - detalhar a saida de `dry-run`
 - adicionar metricas por etapa

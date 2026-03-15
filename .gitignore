@@ -16,7 +16,6 @@ temp/
 
 # Standard Python ignores
 __pycache__/
-*.py[cod]
 .venv/
 *.pyc
 .DS_Store
