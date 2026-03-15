@@ -32,13 +32,27 @@ def scan_existing_taxonomy(config: AppConfig) -> Dict[str, List[str]]:
 
 
 def normalize_categories(config: AppConfig, category_l1: str | None, category_l2: str | None) -> Tuple[str, str]:
-    aliases = {key.lower(): value for key, value in config.taxonomy.aliases.items()}
+    global_aliases = {key.lower(): value for key, value in config.taxonomy.aliases.items()}
+    level1_aliases = {key.lower(): value for key, value in config.taxonomy.level1_aliases.items()}
+    level2_aliases = {key.lower(): value for key, value in config.taxonomy.level2_aliases.items()}
 
     level1 = sanitize_path_component(category_l1 or config.taxonomy.level1_default, config.taxonomy.level1_default)
     level2 = sanitize_path_component(category_l2 or config.taxonomy.level2_default, config.taxonomy.level2_default)
 
-    level1 = aliases.get(level1.lower(), level1)
-    level2 = aliases.get(level2.lower(), level2)
+    level1 = global_aliases.get(level1.lower(), level1_aliases.get(level1.lower(), level1))
+    level2 = global_aliases.get(level2.lower(), level2_aliases.get(level2.lower(), level2))
+    return level1, level2
+
+
+def align_with_existing_taxonomy(existing_taxonomy: Dict[str, List[str]], level1: str, level2: str) -> Tuple[str, str]:
+    for existing_level1, existing_level2_items in existing_taxonomy.items():
+        if existing_level1.lower() == level1.lower():
+            level1 = existing_level1
+            for existing_level2 in existing_level2_items:
+                if existing_level2.lower() == level2.lower():
+                    level2 = existing_level2
+                    break
+            break
     return level1, level2
 
 

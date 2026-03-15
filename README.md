@@ -1,78 +1,152 @@
 # AI Smart Folders
 
-AI Smart Folders is my first attempt to play with local AI models and LLMs functions. 
-It's a Python-based assistant that scans an inbox directory, summarizes files with optional AI-assisted metadata, and safely routes them into an organized destination structure.
+AI Smart Folders e uma app local em Python para organizar arquivos com ajuda de LLMs e heuristicas, transformando um inbox em uma estrutura semantica previsivel.
 
-## Features
-- Loads configuration overrides from `data_dir/config.yaml` inside your runtime directory (default `~/.ai-smart-folders-data/config.yaml`), or from the path set in `AI_SMART_CONFIG_PATH`, falling back to sane defaults for the inbox, output directory, model name, ignored folders, and worker count.
-- Normalizes logging across console, agent, and API outputs so automated runs stay silent while still capturing warnings and errors.
-- Integrates with optional libraries such as `ollama`, `pypdf`, `python-docx`, `pytesseract`, `Pillow`, and `python-pptx` to harvest metadata from a wide variety of document types.
-- Handles file hashing, caching, threading, and SQLite bookkeeping to avoid reprocessing files and to provide consistent move semantics.
+Hoje o projeto esta em transicao de um script monolitico para uma base modular mais robusta. O fluxo legado continua no repositorio, mas a nova espinha dorsal da app ja existe e esta sendo usada pela nova CLI.
 
-## Requirements
-- Python 3.10 or newer.
-- Optional libraries surfaced in the script:
-  - `ollama`
-  - `pypdf`
-  - `python-docx`
-  - `pytesseract`
-  - `Pillow`
-  - `python-pptx`
-- `tesseract` binary on the system if `pytesseract` is used.
+## Estado atual
 
-Install dependencies with:
+### O que a app ja faz
+- processa arquivos locais a partir de um inbox
+- extrai texto e metadados de varios formatos
+- usa entendimento + classificacao separados
+- organiza em uma taxonomia de 2 niveis
+- envia casos ambiguos para revisao
+- detecta duplicatas por hash
+- persiste runs e movimentos em SQLite
+- suporta `dry-run`, `undo-last-run`, `benchmark` e `reindex-taxonomy`
 
-```bash
-python -m pip install ollama pypdf python-docx pytesseract Pillow python-pptx
-```
+### O que estamos construindo agora
+- ampliar cobertura de formatos e qualidade dos extractors
+- enriquecer o `dry-run` com trilha de decisao por arquivo
+- consolidar benchmark com dataset real
+- adicionar metricas por etapa
+- preparar a base para otimizar concorrencia por tipo de carga
 
-## Setup
-1. Clone the repository and enter the directory.
-2. (Optional) Create and activate a virtual environment.
-3. Copy `config.example.yaml` into your data directory (default `~/.ai-smart-folders-data/config.yaml`) or another location you intend to use for runtime files, and edit it there. The sample already lists `inbox_dir`, `organized_dir`, `ollama_model`, `ignore_dirs`, `max_content_length`, `max_workers`, and the `data_dir` value that controls where runtime artifacts land. Make sure the `data_dir` entry matches the directory that now holds this config file.
-4. Optionally set `AI_SMART_CONFIG_PATH` to the explicit config file location (if not using the default `data_dir/config.yaml`) and `AI_SMART_DATA_DIR` to the secured data folder before running the script.
-5. Make sure `OLLAMA_API_URL` (if using Ollama) and any credentials for optional services are configured in your environment.
+## Arquitetura atual
 
-If you keep `config.yaml` in the project root and omit `data_dir`, the new CLI defaults runtime artifacts to `./.ai-smart-folders-data/`.
+### Fluxo legado
+- `smart-folders_v2.py`
+- `smart-folders_v1.py`
 
-## Usage
+### Fluxo novo
+- `main.py`
+- `ai_smart_folders/`
 
-Run the legacy production-ready agent with logging, caching, and SQLite bookkeeping:
+Principais modulos do fluxo novo:
+- `ai_smart_folders/models.py`
+- `ai_smart_folders/config.py`
+- `ai_smart_folders/cli.py`
+- `ai_smart_folders/pipeline.py`
+- `ai_smart_folders/extractors.py`
+- `ai_smart_folders/llm.py`
+- `ai_smart_folders/taxonomy.py`
+- `ai_smart_folders/storage.py`
+- `ai_smart_folders/evaluation.py`
 
-```bash
-python smart-folders_v2.py
-```
+## Funcionalidades implementadas no fluxo novo
+- CLI com `Typer`
+- modelos `Pydantic`
+- pipeline por estagios:
+  - `ingest`
+  - `extract`
+  - `understand`
+  - `classify`
+  - `act`
+- prompts separados para entendimento e classificacao
+- regras deterministicas antes do LLM
+- taxonomia em 2 niveis com aliases
+- pastas tecnicas:
+  - `_NeedsReview`
+  - `_Duplicates`
+  - `_FailedExtraction`
+- cache versionado por hash + modelo + prompt
+- benchmark com dataset JSONL
 
-There is also a lightweight, single-threaded helper in `smart-folders_v1.py` that can be used for experimentation:
+## Formatos atualmente suportados no fluxo novo
+- PDF
+- DOCX
+- DOC
+- PPTX
+- PPT
+- TXT
+- MD
+- CSV
+- LOG
+- JSON
+- XML
+- HTML
+- JPG
+- JPEG
+- PNG
 
-```bash
-python smart-folders_v1.py
-```
+## Requisitos
+- Python 3.10 ou superior
+- dependencias do `requirements.txt`
+- `tesseract` para OCR quando usado
+- `soffice` para conversao de `.doc` e `.ppt` quando necessario
 
-The new modular CLI foundation from the v3 implementation plan is available via `main.py`:
-
-```bash
-python main.py run
-python main.py dry-run
-python main.py benchmark --limit 10
-python main.py undo-last-run
-python main.py reindex-taxonomy
-```
-
-If you are using the project virtual environment, install the new dependencies first:
+Instalacao:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-## Data & Logging
-- Runtime data (agent logs, API logs, the cache, and the SQLite DB) lives inside the configured `data_dir` (default `~/.ai-smart-folders-data`). That directory is excluded from the repository, so public access never exposes processed files or personal metadata.
-- Set `data_dir` via the config or override it with `AI_SMART_DATA_DIR`. Existing artifacts such as `agent.log`, `api.log`, `file_cache.pkl`, and `file_organization.db` can be moved into that directory (`mkdir -p ~/.ai-smart-folders-data && mv agent.log api.log file_cache.pkl file_organization.db ~/.ai-smart-folders-data/`) before running the script.
-- `agent.log`: timestamped events from the FileAgent logger.
-- `api.log`: captures 1:1 request/response pairs when AI APIs are used.
+## Configuracao
+Use `config.example.yaml` como base.
 
-## Contribution
-Contributions are welcome. Please open issues for bugs or feature ideas, and feel free to submit pull requests following existing styling and logging patterns.
+O arquivo aceita configuracoes para:
+- inbox e destino
+- modelos locais
+- thresholds de review
+- workers
+- taxonomia e aliases
+- `data_dir`
 
-## License
-This project is open-source under the MIT License. See `LICENSE` for details.
+Se voce mantiver `config.yaml` na raiz do projeto e nao definir `data_dir`, a nova CLI usa `./.ai-smart-folders-data/` para logs, cache e SQLite.
+
+## Uso
+
+### Nova CLI
+```bash
+python main.py run
+python main.py dry-run
+python main.py benchmark --limit 10
+python main.py benchmark --dataset evaluation/sample_dataset.jsonl
+python main.py undo-last-run
+python main.py reindex-taxonomy
+```
+
+### Script legado
+```bash
+python smart-folders_v2.py
+```
+
+## Roadmap imediato
+
+### Em andamento
+- consolidar o fluxo novo como caminho principal
+- melhorar extractors e cobertura de formatos
+- tornar o benchmark util para regressao real
+
+### Proximos passos
+- adicionar `XLSX/XLS`
+- adicionar `EML/MSG`
+- melhorar OCR multipagina
+- detalhar a saida de `dry-run`
+- adicionar metricas por etapa
+- avaliar pools dedicados para I/O, OCR e inferencia
+
+### Deliberadamente adiado
+- `Ray`
+- infraestrutura distribuida
+- clusterizacao
+
+## Documentacao de trabalho
+- [Upgrade Plan](docs/UPGRADE-PLAN.md)
+- [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
+- [Analise de Evolucao](docs/ANALISE_EVOLUCAO.md)
+- [Analise de Stack](docs/ANALISE_STACK.md)
+
+## Licenca
+MIT. Veja [LICENSE](LICENSE).

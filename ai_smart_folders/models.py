@@ -26,6 +26,8 @@ class TaxonomyConfig(BaseModel):
     level1_default: str = "General"
     level2_default: str = "Unsorted"
     aliases: Dict[str, str] = Field(default_factory=dict)
+    level1_aliases: Dict[str, str] = Field(default_factory=dict)
+    level2_aliases: Dict[str, str] = Field(default_factory=dict)
     technical_folders: List[str] = Field(
         default_factory=lambda: [
             "_NeedsReview",
@@ -122,3 +124,21 @@ class RunMetrics(BaseModel):
     dry_run: bool = False
     avg_confidence: float = 0.0
     duration_seconds: float = 0.0
+
+
+class BenchmarkRecord(BaseModel):
+    source_path: Path
+    expected_category_l1: Optional[str] = None
+    expected_category_l2: Optional[str] = None
+    expected_needs_review: Optional[bool] = None
+
+
+class BenchmarkReport(BaseModel):
+    dataset_path: Path
+    total_cases: int = 0
+    matched_level1: int = 0
+    matched_level2: int = 0
+    matched_review_flag: int = 0
+    full_matches: int = 0
+    failures: int = 0
+    cases: List[Dict[str, Any]] = Field(default_factory=list)

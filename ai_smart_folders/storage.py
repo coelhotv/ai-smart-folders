@@ -223,6 +223,18 @@ class Database:
                 ).fetchall()
             )
 
+    def find_existing_by_hash(self, file_hash: str) -> Optional[sqlite3.Row]:
+        with self.lock:
+            return self.conn.execute(
+                """
+                SELECT * FROM file_events
+                WHERE file_hash = ? AND destination_path IS NOT NULL AND dry_run = 0
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (file_hash,),
+            ).fetchone()
+
     def close(self) -> None:
         with self.lock:
             self.conn.close()

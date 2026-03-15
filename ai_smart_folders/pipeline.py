@@ -6,14 +6,15 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence
 
 from .config import load_config
+from .evaluation import build_benchmark_report, load_benchmark_dataset
 from .extractors import extract, sniff_mime_type
 from .llm import classify_document, understand_document
-from .models import AppConfig, ClassificationResult, DocumentEnvelope, RunMetrics
+from .models import AppConfig, BenchmarkReport, ClassificationResult, DocumentEnvelope, RunMetrics
 from .storage import ClassificationCache, Database
-from .taxonomy import normalize_categories, scan_existing_taxonomy, technical_destination
+from .taxonomy import align_with_existing_taxonomy, normalize_categories, scan_existing_taxonomy, technical_destination
 
 
 class SmartFoldersPipeline:
@@ -31,22 +32,23 @@ class SmartFoldersPipeline:
         for file_path in sorted(self.config.inbox_dir.iterdir()):
             if not file_path.is_file() or file_path.name.startswith("."):
                 continue
-            try:
-                size = file_path.stat().st_size
-            except Exception:
-                size = None
-            docs.append(
-                DocumentEnvelope(
-                    document_id=uuid.uuid4().hex,
-                    run_id=run_id,
-                    source_path=file_path,
-                    filename=file_path.name,
-                    extension=file_path.suffix.lower(),
-                    file_size=size,
-                    mime_type=sniff_mime_type(file_path),
-                )
-            )
+            docs.append(self._build_envelope(run_id, file_path))
         return docs
+
+    def _build_envelope(self, run_id: str, file_path: Path) -> DocumentEnvelope:
+        try:
+            size = file_path.stat().st_size
+        except Exception:
+            size = None
+        return DocumentEnvelope(
+            document_id=uuid.uuid4().hex,
+            run_id=run_id,
+            source_path=file_path,
+            filename=file_path.name,
+            extension=file_path.suffix.lower(),
+            file_size=size,
+            mime_type=sniff_mime_type(file_path),
+        )
 
     def _apply_cached_result(self, envelope: DocumentEnvelope) -> bool:
         cached = self.cache.get(envelope.source_path, self.config)
@@ -81,7 +83,7 @@ class SmartFoldersPipeline:
             else:
                 envelope.reason = "Below review threshold"
 
-    def _act(self, envelope: DocumentEnvelope, dry_run: bool) -> None:
+    def _act(self, envelope: DocumentEnvelope, dry_run: bool, existing_taxonomy: Dict[str, List[str]]) -> None:
         if envelope.needs_review:
             destination = technical_destination(self.config, "_NeedsReview", envelope.filename)
         elif not envelope.extracted_text:
@@ -90,6 +92,7 @@ class SmartFoldersPipeline:
             destination = technical_destination(self.config, "_NeedsReview", envelope.filename)
         else:
             level1, level2 = normalize_categories(self.config, envelope.category_l1, envelope.category_l2)
+            level1, level2 = align_with_existing_taxonomy(existing_taxonomy, level1, level2)
             envelope.category_l1 = level1
             envelope.category_l2 = level2
             destination = self.config.organized_dir / level1 / level2 / envelope.filename
@@ -119,6 +122,23 @@ class SmartFoldersPipeline:
             self.logger.info("Run %s processing %s", envelope.run_id, envelope.filename)
             file_hash = self.cache.file_hash(envelope.source_path)
             envelope.file_hash = file_hash
+            if file_hash:
+                existing = self.db.find_existing_by_hash(file_hash)
+                if existing is not None:
+                    envelope.category_l1 = "_Duplicates"
+                    envelope.category_l2 = existing["category_l2"] or "KnownDuplicate"
+                    envelope.confidence = 1.0
+                    envelope.reason = f"Duplicate of {existing['filename']}"
+                    envelope.needs_review = False
+                    envelope.status = "duplicate"
+                    envelope.destination_path = technical_destination(self.config, "_Duplicates", envelope.filename)
+                    if dry_run:
+                        envelope.status = "planned"
+                    else:
+                        envelope.destination_path.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.move(str(envelope.source_path), str(envelope.destination_path))
+                        envelope.status = "moved"
+                    return envelope
 
             if not self._apply_cached_result(envelope):
                 extraction = extract(envelope.source_path)
@@ -176,11 +196,24 @@ class SmartFoldersPipeline:
                         },
                     )
 
-            self._act(envelope, dry_run=dry_run)
+            self._act(envelope, dry_run=dry_run, existing_taxonomy=existing_taxonomy)
         except Exception as exc:
             envelope.errors.append(str(exc))
             envelope.status = "failed"
         return envelope
+
+    def _run_documents(self, docs: Sequence[DocumentEnvelope], dry_run: bool) -> List[DocumentEnvelope]:
+        existing_taxonomy = scan_existing_taxonomy(self.config)
+        results: List[DocumentEnvelope] = []
+        with ThreadPoolExecutor(max_workers=max(1, self.config.max_workers)) as executor:
+            future_to_doc = {
+                executor.submit(self._process_document, doc, existing_taxonomy, dry_run): doc for doc in docs
+            }
+            for future in as_completed(future_to_doc):
+                envelope = future.result()
+                self.db.log_document(envelope, dry_run=dry_run)
+                results.append(envelope)
+        return results
 
     def run(self, dry_run: bool = False, limit: Optional[int] = None) -> RunMetrics:
         start = time.perf_counter()
@@ -206,16 +239,7 @@ class SmartFoldersPipeline:
             self.db.complete_run(metrics)
             return metrics
 
-        existing_taxonomy = scan_existing_taxonomy(self.config)
-        results: List[DocumentEnvelope] = []
-        with ThreadPoolExecutor(max_workers=max(1, self.config.max_workers)) as executor:
-            future_to_doc = {
-                executor.submit(self._process_document, doc, existing_taxonomy, dry_run): doc for doc in docs
-            }
-            for future in as_completed(future_to_doc):
-                envelope = future.result()
-                self.db.log_document(envelope, dry_run=dry_run)
-                results.append(envelope)
+        results = self._run_documents(docs, dry_run=dry_run)
 
         processed = [item for item in results if item.status in {"moved", "planned"}]
         failed = [item for item in results if item.status == "failed"]
@@ -243,8 +267,32 @@ class SmartFoldersPipeline:
         self.logger.info("Total time: %.2fs", metrics.duration_seconds)
         return metrics
 
-    def benchmark(self, sample_limit: Optional[int] = None) -> RunMetrics:
-        return self.run(dry_run=True, limit=sample_limit)
+    def benchmark(self, dataset_path: Optional[Path] = None, sample_limit: Optional[int] = None) -> RunMetrics | BenchmarkReport:
+        if dataset_path is None:
+            return self.run(dry_run=True, limit=sample_limit)
+
+        start = time.perf_counter()
+        run_id = uuid.uuid4().hex
+        self.db.create_run(run_id, dry_run=True)
+        records = load_benchmark_dataset(dataset_path)
+        if sample_limit is not None:
+            records = records[:sample_limit]
+
+        docs = [
+            self._build_envelope(run_id, record.source_path.expanduser().resolve())
+            for record in records
+            if record.source_path.expanduser().resolve().exists()
+        ]
+        results = self._run_documents(docs, dry_run=True)
+        report = build_benchmark_report(dataset_path, records, results)
+        self.logger.info(
+            "Benchmark %s finished in %.2fs with %d/%d full matches",
+            dataset_path,
+            time.perf_counter() - start,
+            report.full_matches,
+            report.total_cases,
+        )
+        return report
 
     def undo_last_run(self) -> int:
         run_id = self.db.get_latest_run(include_dry_run=False)

@@ -34,11 +34,11 @@ def _run_impl(config_path: Optional[Path], dry_run: bool, limit: Optional[int]) 
     return 0
 
 
-def _benchmark_impl(config_path: Optional[Path], limit: Optional[int]) -> int:
+def _benchmark_impl(config_path: Optional[Path], limit: Optional[int], dataset: Optional[Path]) -> int:
     config = load_config(config_path)
     pipeline = build_pipeline(config=config)
     try:
-        metrics = pipeline.benchmark(sample_limit=limit)
+        metrics = pipeline.benchmark(dataset_path=dataset, sample_limit=limit)
     finally:
         pipeline.close()
     print(json.dumps(_dump_model(metrics), indent=2, default=str))
@@ -78,6 +78,7 @@ def _argparse_main() -> None:
 
     benchmark_parser = sub.add_parser("benchmark")
     benchmark_parser.add_argument("--limit", type=int, default=None)
+    benchmark_parser.add_argument("--dataset", type=Path, default=None)
 
     sub.add_parser("undo-last-run")
     sub.add_parser("reindex-taxonomy")
@@ -88,7 +89,7 @@ def _argparse_main() -> None:
     if args.command == "dry-run":
         raise SystemExit(_run_impl(args.config, True, args.limit))
     if args.command == "benchmark":
-        raise SystemExit(_benchmark_impl(args.config, args.limit))
+        raise SystemExit(_benchmark_impl(args.config, args.limit, args.dataset))
     if args.command == "undo-last-run":
         raise SystemExit(_undo_impl(args.config))
     if args.command == "reindex-taxonomy":
@@ -107,8 +108,12 @@ if typer is not None:
         raise typer.Exit(_run_impl(config, True, limit))
 
     @app.command("benchmark")
-    def benchmark_command(config: Optional[Path] = typer.Option(None), limit: Optional[int] = typer.Option(None)) -> None:
-        raise typer.Exit(_benchmark_impl(config, limit))
+    def benchmark_command(
+        config: Optional[Path] = typer.Option(None),
+        limit: Optional[int] = typer.Option(None),
+        dataset: Optional[Path] = typer.Option(None),
+    ) -> None:
+        raise typer.Exit(_benchmark_impl(config, limit, dataset))
 
     @app.command("undo-last-run")
     def undo_command(config: Optional[Path] = typer.Option(None)) -> None:
