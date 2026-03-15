@@ -21,6 +21,8 @@ thresholds:
 workers:
   io: 4
   llm: 1
+  extract: 4
+  act: 2
 
 taxonomy:
   level1_default: General

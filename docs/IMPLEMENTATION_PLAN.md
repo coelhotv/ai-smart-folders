@@ -20,6 +20,7 @@ Este plano agora serve como documento operacional do projeto e nao apenas como p
 - aliases de taxonomia
 - deteccao de duplicatas por hash
 - benchmark com dataset JSONL
+- filas e workers basicos por estagio (`extract`, `llm`, `act`)
 
 ### Parcialmente concluido
 - extractors:
@@ -30,12 +31,9 @@ Este plano agora serve como documento operacional do projeto e nao apenas como p
   ja existe `needs_review`, threshold de confianca e `_NeedsReview`, mas o relatorio ainda e simples
 
 ### Nao iniciado ou ainda superficial
-- `XLSX/XLS`
-- `EML/MSG`
 - ZIP como conteiner
 - dataset real de benchmark
 - metricas detalhadas por etapa
-- pools separados por tipo de trabalho
 - `ProcessPoolExecutor` para OCR/conversoes
 - relatorio detalhado de `dry-run` por arquivo
 
@@ -131,13 +129,14 @@ Critério de aceite:
 - relatorio de run com indicadores minimos no final da execucao
 
 ### Etapa 5: performance por estagio
-Status: futura
+Status: iniciada
 
 Objetivo:
 - reduzir gargalos sem introduzir infraestrutura pesada cedo demais
 
 Escopo:
-- separar pools de I/O, OCR e inferencia
+- evoluir os workers por estagio ja existentes
+- separar melhor I/O, OCR e inferencia
 - avaliar `ProcessPoolExecutor`
 - manter compatibilidade com a arquitetura atual
 
@@ -149,7 +148,7 @@ Critério de aceite:
 2. `dry-run` detalhado
 3. dataset real de benchmark
 4. metricas por etapa
-5. pools dedicados
+5. evolucao dos pools dedicados
 
 ## Riscos atuais
 - benchmark ainda sem dataset real no repositorio

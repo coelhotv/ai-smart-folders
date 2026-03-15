@@ -42,6 +42,7 @@ Hoje existem dois caminhos principais no repositorio:
 - cache versionado por hash + prompt/modelo
 - logs separados para agente e API
 - deteccao de duplicatas por hash
+- pipeline com filas e workers por estagio
 - `dry-run`
 - `benchmark`
 - `reindex-taxonomy`
@@ -63,11 +64,10 @@ Hoje existem dois caminhos principais no repositorio:
 - rodar benchmark com dataset
 
 ### O fluxo novo ainda nao esta completo em
-- cobertura de formatos adicionais como `XLSX/XLS` e `EML/MSG`
 - OCR multipagina realmente robusto em todos os cenarios
 - benchmark com dataset real versionado no repositorio
 - relatorio mais rico de `dry-run` por arquivo
-- uso de pools separados por tipo de carga alem do `ThreadPoolExecutor`
+- separacao mais precisa de pools por tipo de carga
 - dataset de avaliacao com ground truth real
 - melhoria dos extractors para HTML/JSON/XML mais especializados
 
@@ -143,10 +143,11 @@ Proximo foco:
 - criterios de aceite por regressao
 
 ### Fase 5: performance por estagio
-Status: ainda nao iniciada de verdade
+Status: iniciada
 
 Proximo foco:
-- separar I/O, OCR e inferencia local por pools dedicados
+- evoluir a separacao atual de workers por estagio
+- separar I/O, OCR e inferencia local com mais precisao
 - avaliar `ProcessPoolExecutor` onde fizer sentido
 - manter `Ray` apenas como opcao futura se os gargalos reais justificarem
 

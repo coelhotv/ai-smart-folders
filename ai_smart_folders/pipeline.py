@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import logging
+import queue
 import shutil
+import threading
 import time
 import uuid
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
@@ -68,6 +69,86 @@ class SmartFoldersPipeline:
         envelope.status = "classified"
         return True
 
+    def _extract_stage(self, envelope: DocumentEnvelope) -> str:
+        self.logger.info("Run %s extract %s", envelope.run_id, envelope.filename)
+        file_hash = self.cache.file_hash(envelope.source_path)
+        envelope.file_hash = file_hash
+        if file_hash:
+            existing = self.db.find_existing_by_hash(file_hash)
+            if existing is not None:
+                envelope.category_l1 = "_Duplicates"
+                envelope.category_l2 = existing["category_l2"] or "KnownDuplicate"
+                envelope.confidence = 1.0
+                envelope.reason = f"Duplicate of {existing['filename']}"
+                envelope.needs_review = False
+                envelope.status = "duplicate"
+                return "act"
+
+        if self._apply_cached_result(envelope):
+            envelope.metadata["decision_source"] = "cache"
+            return "act"
+
+        extraction = extract(envelope.source_path)
+        envelope.extracted_text = extraction.extracted_text
+        envelope.metadata.update(extraction.metadata)
+        envelope.extraction_quality = extraction.extraction_quality
+        envelope.ocr_used = extraction.ocr_used
+        envelope.conversion_used = extraction.conversion_used
+        envelope.errors.extend(extraction.errors)
+        envelope.status = "extracted"
+        envelope.metadata["decision_source"] = envelope.metadata.get("decision_source", "extractor")
+
+        if not envelope.extracted_text:
+            envelope.needs_review = True
+            envelope.reason = "Extraction produced no usable text"
+            envelope.status = "review"
+            return "act"
+        return "llm"
+
+    def _llm_stage(self, envelope: DocumentEnvelope, existing_taxonomy: Dict[str, List[str]]) -> None:
+        self.logger.info("Run %s llm %s", envelope.run_id, envelope.filename)
+        understanding = understand_document(
+            self.config,
+            envelope.filename,
+            str(envelope.source_path),
+            envelope.extracted_text or "",
+        )
+        envelope.summary = understanding.summary
+        envelope.keywords = understanding.keywords
+        envelope.language = understanding.language
+        envelope.document_type = understanding.document_type
+        envelope.understanding_model = understanding.model_name
+        envelope.prompt_version = understanding.prompt_version
+        envelope.status = "understood"
+
+        classification = classify_document(
+            self.config,
+            envelope.filename,
+            str(envelope.source_path),
+            envelope.mime_type,
+            understanding,
+            envelope.extracted_text or "",
+            existing_taxonomy,
+        )
+        self._review_classification(envelope, classification)
+        envelope.status = "classified"
+        envelope.metadata["decision_source"] = "llm"
+        self.cache.set(
+            envelope.source_path,
+            self.config,
+            {
+                "summary": envelope.summary,
+                "keywords": envelope.keywords,
+                "language": envelope.language,
+                "document_type": envelope.document_type,
+                "category_l1": envelope.category_l1,
+                "category_l2": envelope.category_l2,
+                "confidence": envelope.confidence,
+                "reason": envelope.reason,
+                "needs_review": envelope.needs_review,
+            },
+        )
+
     def _review_classification(self, envelope: DocumentEnvelope, classification: ClassificationResult) -> None:
         envelope.category_l1 = classification.category_l1
         envelope.category_l2 = classification.category_l2
@@ -84,7 +165,9 @@ class SmartFoldersPipeline:
                 envelope.reason = "Below review threshold"
 
     def _act(self, envelope: DocumentEnvelope, dry_run: bool, existing_taxonomy: Dict[str, List[str]]) -> None:
-        if envelope.needs_review:
+        if envelope.category_l1 == "_Duplicates":
+            destination = technical_destination(self.config, "_Duplicates", envelope.filename)
+        elif envelope.needs_review:
             destination = technical_destination(self.config, "_NeedsReview", envelope.filename)
         elif not envelope.extracted_text:
             destination = technical_destination(self.config, "_FailedExtraction", envelope.filename)
@@ -117,102 +200,103 @@ class SmartFoldersPipeline:
         shutil.move(str(envelope.source_path), str(destination))
         envelope.status = "moved"
 
-    def _process_document(self, envelope: DocumentEnvelope, existing_taxonomy: Dict[str, List[str]], dry_run: bool) -> DocumentEnvelope:
-        try:
-            self.logger.info("Run %s processing %s", envelope.run_id, envelope.filename)
-            file_hash = self.cache.file_hash(envelope.source_path)
-            envelope.file_hash = file_hash
-            if file_hash:
-                existing = self.db.find_existing_by_hash(file_hash)
-                if existing is not None:
-                    envelope.category_l1 = "_Duplicates"
-                    envelope.category_l2 = existing["category_l2"] or "KnownDuplicate"
-                    envelope.confidence = 1.0
-                    envelope.reason = f"Duplicate of {existing['filename']}"
-                    envelope.needs_review = False
-                    envelope.status = "duplicate"
-                    envelope.destination_path = technical_destination(self.config, "_Duplicates", envelope.filename)
-                    if dry_run:
-                        envelope.status = "planned"
-                    else:
-                        envelope.destination_path.parent.mkdir(parents=True, exist_ok=True)
-                        shutil.move(str(envelope.source_path), str(envelope.destination_path))
-                        envelope.status = "moved"
-                    return envelope
-
-            if not self._apply_cached_result(envelope):
-                extraction = extract(envelope.source_path)
-                envelope.extracted_text = extraction.extracted_text
-                envelope.metadata.update(extraction.metadata)
-                envelope.extraction_quality = extraction.extraction_quality
-                envelope.ocr_used = extraction.ocr_used
-                envelope.conversion_used = extraction.conversion_used
-                envelope.errors.extend(extraction.errors)
-                envelope.status = "extracted"
-
-                if not envelope.extracted_text:
-                    envelope.needs_review = True
-                    envelope.reason = "Extraction produced no usable text"
-                    envelope.status = "review"
-                else:
-                    understanding = understand_document(
-                        self.config,
-                        envelope.filename,
-                        str(envelope.source_path),
-                        envelope.extracted_text,
-                    )
-                    envelope.summary = understanding.summary
-                    envelope.keywords = understanding.keywords
-                    envelope.language = understanding.language
-                    envelope.document_type = understanding.document_type
-                    envelope.understanding_model = understanding.model_name
-                    envelope.prompt_version = understanding.prompt_version
-                    envelope.status = "understood"
-
-                    classification = classify_document(
-                        self.config,
-                        envelope.filename,
-                        str(envelope.source_path),
-                        envelope.mime_type,
-                        understanding,
-                        envelope.extracted_text,
-                        existing_taxonomy,
-                    )
-                    self._review_classification(envelope, classification)
-                    envelope.status = "classified"
-                    self.cache.set(
-                        envelope.source_path,
-                        self.config,
-                        {
-                            "summary": envelope.summary,
-                            "keywords": envelope.keywords,
-                            "language": envelope.language,
-                            "document_type": envelope.document_type,
-                            "category_l1": envelope.category_l1,
-                            "category_l2": envelope.category_l2,
-                            "confidence": envelope.confidence,
-                            "reason": envelope.reason,
-                            "needs_review": envelope.needs_review,
-                        },
-                    )
-
-            self._act(envelope, dry_run=dry_run, existing_taxonomy=existing_taxonomy)
-        except Exception as exc:
-            envelope.errors.append(str(exc))
-            envelope.status = "failed"
-        return envelope
-
     def _run_documents(self, docs: Sequence[DocumentEnvelope], dry_run: bool) -> List[DocumentEnvelope]:
         existing_taxonomy = scan_existing_taxonomy(self.config)
         results: List[DocumentEnvelope] = []
-        with ThreadPoolExecutor(max_workers=max(1, self.config.max_workers)) as executor:
-            future_to_doc = {
-                executor.submit(self._process_document, doc, existing_taxonomy, dry_run): doc for doc in docs
-            }
-            for future in as_completed(future_to_doc):
-                envelope = future.result()
-                self.db.log_document(envelope, dry_run=dry_run)
-                results.append(envelope)
+        results_lock = threading.Lock()
+
+        extract_queue: "queue.Queue[Optional[DocumentEnvelope]]" = queue.Queue()
+        llm_queue: "queue.Queue[Optional[DocumentEnvelope]]" = queue.Queue()
+        act_queue: "queue.Queue[Optional[DocumentEnvelope]]" = queue.Queue()
+
+        extract_workers = max(1, min(self.config.max_workers, self.config.workers.extract or self.config.workers.io))
+        llm_workers = max(1, min(self.config.max_workers, self.config.workers.llm))
+        act_workers = max(1, min(self.config.max_workers, self.config.workers.act or self.config.workers.io))
+
+        def extract_worker() -> None:
+            while True:
+                envelope = extract_queue.get()
+                if envelope is None:
+                    extract_queue.task_done()
+                    break
+                try:
+                    next_stage = self._extract_stage(envelope)
+                    if next_stage == "llm":
+                        llm_queue.put(envelope)
+                    else:
+                        act_queue.put(envelope)
+                except Exception as exc:
+                    envelope.errors.append(str(exc))
+                    envelope.status = "failed"
+                    act_queue.put(envelope)
+                finally:
+                    extract_queue.task_done()
+
+        def llm_worker() -> None:
+            while True:
+                envelope = llm_queue.get()
+                if envelope is None:
+                    llm_queue.task_done()
+                    break
+                try:
+                    self._llm_stage(envelope, existing_taxonomy)
+                except Exception as exc:
+                    envelope.errors.append(str(exc))
+                    envelope.status = "failed"
+                finally:
+                    act_queue.put(envelope)
+                    llm_queue.task_done()
+
+        def act_worker() -> None:
+            while True:
+                envelope = act_queue.get()
+                if envelope is None:
+                    act_queue.task_done()
+                    break
+                try:
+                    if envelope.status != "failed":
+                        self._act(envelope, dry_run=dry_run, existing_taxonomy=existing_taxonomy)
+                except Exception as exc:
+                    envelope.errors.append(str(exc))
+                    envelope.status = "failed"
+                finally:
+                    self.db.log_document(envelope, dry_run=dry_run)
+                    with results_lock:
+                        results.append(envelope)
+                    act_queue.task_done()
+
+        extract_threads = [
+            threading.Thread(target=extract_worker, daemon=True, name=f"extract-worker-{idx}")
+            for idx in range(extract_workers)
+        ]
+        llm_threads = [
+            threading.Thread(target=llm_worker, daemon=True, name=f"llm-worker-{idx}")
+            for idx in range(llm_workers)
+        ]
+        act_threads = [
+            threading.Thread(target=act_worker, daemon=True, name=f"act-worker-{idx}")
+            for idx in range(act_workers)
+        ]
+
+        for thread in [*extract_threads, *llm_threads, *act_threads]:
+            thread.start()
+
+        for doc in docs:
+            extract_queue.put(doc)
+        for _ in extract_threads:
+            extract_queue.put(None)
+
+        extract_queue.join()
+        for _ in llm_threads:
+            llm_queue.put(None)
+        llm_queue.join()
+        for _ in act_threads:
+            act_queue.put(None)
+        act_queue.join()
+
+        for thread in [*extract_threads, *llm_threads, *act_threads]:
+            thread.join(timeout=1.0)
+
         return results
 
     def run(self, dry_run: bool = False, limit: Optional[int] = None) -> RunMetrics:

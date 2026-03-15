@@ -20,6 +20,8 @@ class ThresholdSettings(BaseModel):
 class WorkerSettings(BaseModel):
     io: int = 4
     llm: int = 1
+    extract: Optional[int] = None
+    act: Optional[int] = None
 
 
 class TaxonomyConfig(BaseModel):

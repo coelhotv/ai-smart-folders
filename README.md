@@ -62,6 +62,7 @@ Principais modulos do fluxo novo:
   - `_FailedExtraction`
 - cache versionado por hash + modelo + prompt
 - benchmark com dataset JSONL
+- filas e workers basicos por estagio
 
 ## Formatos atualmente suportados no fluxo novo
 - PDF
@@ -139,7 +140,7 @@ python smart-folders_v2.py
 - melhorar OCR multipagina
 - detalhar a saida de `dry-run`
 - adicionar metricas por etapa
-- avaliar pools dedicados para I/O, OCR e inferencia
+- evoluir os pools por estagio para separar melhor I/O, OCR e inferencia
 
 ### Deliberadamente adiado
 - `Ray`
