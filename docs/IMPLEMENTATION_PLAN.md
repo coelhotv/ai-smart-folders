@@ -28,7 +28,7 @@ Este plano agora serve como documento operacional do projeto e nao apenas como p
 - prompts:
   ja existe separacao entre understanding e classification, mas ainda falta sofisticar a normalizacao e a trilha de decisao
 - review flow:
-  ja existe `needs_review`, threshold de confianca e `_NeedsReview`, mas o relatorio ainda e simples
+  ja existe `needs_review`, threshold de confianca, `_NeedsReview` e relatorio por arquivo, mas a apresentacao ainda pode ficar mais rica
 
 ### Nao iniciado ou ainda superficial
 - ZIP como conteiner
@@ -79,7 +79,7 @@ Critério de aceite:
 - sem regressao nos formatos ja suportados
 
 ### Etapa 2: relatorio de `dry-run` e trilha de decisao
-Status: proxima
+Status: iniciada
 
 Objetivo:
 - tornar a operacao auditavel e confiavel antes de mover arquivos

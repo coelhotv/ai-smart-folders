@@ -200,6 +200,31 @@ class SmartFoldersPipeline:
         shutil.move(str(envelope.source_path), str(destination))
         envelope.status = "moved"
 
+    def _document_report(self, envelope: DocumentEnvelope) -> Dict[str, object]:
+        if envelope.category_l1 == "_Duplicates":
+            source = "duplicate"
+        else:
+            source = str(envelope.metadata.get("decision_source", "unknown"))
+        return {
+            "document_id": envelope.document_id,
+            "filename": envelope.filename,
+            "source_path": str(envelope.source_path),
+            "status": envelope.status,
+            "decision_source": source,
+            "category_l1": envelope.category_l1,
+            "category_l2": envelope.category_l2,
+            "confidence": envelope.confidence,
+            "needs_review": envelope.needs_review,
+            "reason": envelope.reason,
+            "destination_path": str(envelope.destination_path) if envelope.destination_path else None,
+            "mime_type": envelope.mime_type,
+            "document_type": envelope.document_type,
+            "cached": envelope.cached,
+            "ocr_used": envelope.ocr_used,
+            "conversion_used": envelope.conversion_used,
+            "errors": list(envelope.errors),
+        }
+
     def _run_documents(self, docs: Sequence[DocumentEnvelope], dry_run: bool) -> List[DocumentEnvelope]:
         existing_taxonomy = scan_existing_taxonomy(self.config)
         results: List[DocumentEnvelope] = []
@@ -340,6 +365,7 @@ class SmartFoldersPipeline:
             dry_run=dry_run,
             avg_confidence=avg_confidence,
             duration_seconds=time.perf_counter() - start,
+            documents=[self._document_report(item) for item in sorted(results, key=lambda doc: doc.filename.lower())],
         )
         self.db.complete_run(metrics)
         self.logger.info(

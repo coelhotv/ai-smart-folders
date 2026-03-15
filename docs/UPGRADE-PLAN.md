@@ -57,6 +57,7 @@ Hoje existem dois caminhos principais no repositorio:
 - subir a CLI
 - ler configuracao estruturada
 - processar inbox em `run` ou `dry-run`
+- emitir relatorio por arquivo no resultado do run
 - organizar por taxonomia em 2 niveis
 - mandar casos ambiguos para revisao
 - registrar execucoes no banco
@@ -128,7 +129,7 @@ Proximo foco:
 - trilha de decisao mais explicita
 - normalization prompt mais robusto
 - melhor uso da taxonomia existente
-- relatorio de `dry-run` por documento
+- enriquecer ainda mais o relatorio de `dry-run` por documento
 
 ### Fase 4: mensurabilidade e evolucao segura
 Status: iniciada

@@ -126,6 +126,7 @@ class RunMetrics(BaseModel):
     dry_run: bool = False
     avg_confidence: float = 0.0
     duration_seconds: float = 0.0
+    documents: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class BenchmarkRecord(BaseModel):

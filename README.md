@@ -15,6 +15,7 @@ Hoje o projeto esta em transicao de um script monolitico para uma base modular m
 - detecta duplicatas por hash
 - persiste runs e movimentos em SQLite
 - suporta `dry-run`, `undo-last-run`, `benchmark` e `reindex-taxonomy`
+- retorna relatorio JSON por arquivo nas execucoes da nova CLI
 
 ### O que estamos construindo agora
 - ampliar cobertura de formatos e qualidade dos extractors
@@ -138,7 +139,7 @@ python smart-folders_v2.py
 
 ### Proximos passos
 - melhorar OCR multipagina
-- detalhar a saida de `dry-run`
+- enriquecer ainda mais a saida de `dry-run`
 - adicionar metricas por etapa
 - evoluir os pools por estagio para separar melhor I/O, OCR e inferencia
 
