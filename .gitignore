@@ -12,6 +12,7 @@ config.yaml
 .ai-smart-folders-config.yaml
 .env
 temp/
+.ai-smart-folders-data/
 
 # Standard Python ignores
 __pycache__/

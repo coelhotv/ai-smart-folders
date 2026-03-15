@@ -33,9 +33,11 @@ python -m pip install ollama pypdf python-docx pytesseract Pillow python-pptx
 4. Optionally set `AI_SMART_CONFIG_PATH` to the explicit config file location (if not using the default `data_dir/config.yaml`) and `AI_SMART_DATA_DIR` to the secured data folder before running the script.
 5. Make sure `OLLAMA_API_URL` (if using Ollama) and any credentials for optional services are configured in your environment.
 
+If you keep `config.yaml` in the project root and omit `data_dir`, the new CLI defaults runtime artifacts to `./.ai-smart-folders-data/`.
+
 ## Usage
 
-Run the production-ready agent with logging, caching, and SQLite bookkeeping:
+Run the legacy production-ready agent with logging, caching, and SQLite bookkeeping:
 
 ```bash
 python smart-folders_v2.py
@@ -45,6 +47,22 @@ There is also a lightweight, single-threaded helper in `smart-folders_v1.py` tha
 
 ```bash
 python smart-folders_v1.py
+```
+
+The new modular CLI foundation from the v3 implementation plan is available via `main.py`:
+
+```bash
+python main.py run
+python main.py dry-run
+python main.py benchmark --limit 10
+python main.py undo-last-run
+python main.py reindex-taxonomy
+```
+
+If you are using the project virtual environment, install the new dependencies first:
+
+```bash
+python -m pip install -r requirements.txt
 ```
 
 ## Data & Logging
