@@ -145,7 +145,9 @@ def _ocr_pdf_pages_with_ollama(pdf_path: Path, model: Optional[str]) -> Optional
     page_texts = []
     temp_paths = []
     try:
-        for index, page_image in enumerate(convert_from_path(str(pdf_path), dpi=200)):
+        # Limit to the first 3 pages for classification purposes
+        images = convert_from_path(str(pdf_path), dpi=200, first_page=1, last_page=3)
+        for index, page_image in enumerate(images):
             with tempfile.NamedTemporaryFile(prefix=f"ai-smart-folders-page-{index}-", suffix=".png", delete=False) as tmp:
                 page_image.save(tmp.name, format="PNG")
                 temp_path = Path(tmp.name)
