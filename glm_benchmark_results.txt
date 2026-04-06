@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/ai-smart-folders/main.py", line 1, in <module>
-    from ai_smart_folders.cli import main
-  File "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/ai-smart-folders/ai_smart_folders/cli.py", line 8, in <module>
-    from .config import load_config
-  File "/Users/coelhotv/Library/Mobile Documents/com~apple~CloudDocs/git/ai-smart-folders/ai_smart_folders/config.py", line 7, in <module>
-    import yaml
-ModuleNotFoundError: No module named 'yaml'
