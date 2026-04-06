@@ -9,3 +9,4 @@
 {"source_path":"./tmp_eval_samples/ebook_mit-cio-generative-ai-report.pdf","expected_category_l1":"Technology","expected_category_l2":"Reports","expected_needs_review":false}
 {"source_path":"./tmp_eval_samples/pql-model.png","expected_category_l1":"Growth","expected_category_l2":"Models","expected_needs_review":false}
 {"source_path":"./tmp_eval_samples/ux_chart.png","expected_category_l1":"Design","expected_category_l2":"UX","expected_needs_review":false}
+{"source_path":"./tmp_eval_samples/MIT_Winning With Intelligent Choice Architectures.pdf","expected_category_l1":"Technology","expected_category_l2":"Artificial Intelligence","expected_needs_review":false}

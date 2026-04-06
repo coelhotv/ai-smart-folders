@@ -11,11 +11,12 @@ from typing import Dict, List, Optional, Sequence
 
 from .config import load_config
 from .evaluation import build_benchmark_report, load_benchmark_dataset
-from .extractors import extract, sniff_mime_type
+from .extractors import build_extraction_from_precomputed, extract, sniff_mime_type
 from .llm import classify_document, understand_document
 from .models import AppConfig, BenchmarkReport, ClassificationResult, DocumentEnvelope, RunMetrics
 from .storage import ClassificationCache, Database
 from .taxonomy import align_with_existing_taxonomy, normalize_categories, scan_existing_taxonomy, technical_destination
+from . import odl as _odl
 
 
 class SmartFoldersPipeline:
@@ -25,6 +26,8 @@ class SmartFoldersPipeline:
         self.api_logger = api_logger
         self.cache = ClassificationCache(config.data_dir / "file_cache.pkl")
         self.db = Database(config.data_dir / "file_organization.db")
+        # ODL batch-extracted text cache: {absolute_path -> markdown_text}
+        self._odl_cache: Dict[Path, Optional[str]] = {}
 
     def _ingest_documents(self, run_id: str) -> List[DocumentEnvelope]:
         docs: List[DocumentEnvelope] = []
@@ -50,6 +53,53 @@ class SmartFoldersPipeline:
             file_size=size,
             mime_type=sniff_mime_type(file_path),
         )
+
+    def _preprocess_pdfs_batch(self, docs: List[DocumentEnvelope]) -> None:
+        """Phase 1: batch-extract all PDFs via OpenDataLoader (single JVM call)."""
+        if not self.config.odl.enabled:
+            return
+        if not _odl.is_available():
+            self.logger.warning(
+                "opendataloader-pdf not found; falling back to per-file extraction"
+            )
+            return
+
+        # Only process PDFs that are not already cached/duplicate
+        candidates = [
+            doc.source_path
+            for doc in docs
+            if doc.extension == ".pdf"
+            and self.cache.get(doc.source_path, self.config) is None
+        ]
+
+        if not candidates:
+            self.logger.info("ODL: no new PDFs to pre-process")
+            return
+
+        self.logger.info("ODL: pre-processing %d PDF(s) in batch ...", len(candidates))
+        t0 = time.perf_counter()
+
+        odl_settings = self.config.odl
+        extracted = _odl.batch_extract(
+            pdf_paths=candidates,
+            timeout=odl_settings.timeout,
+            use_hybrid=odl_settings.use_hybrid,
+            hybrid_url=odl_settings.hybrid_url,
+            hybrid_timeout=odl_settings.hybrid_timeout_ms,
+            hybrid_fallback=odl_settings.hybrid_fallback,
+            reading_order=odl_settings.reading_order,
+            pages=odl_settings.pages,
+        )
+
+        elapsed = time.perf_counter() - t0
+        success = sum(1 for v in extracted.values() if v)
+        self.logger.info(
+            "ODL: batch done in %.1fs — %d/%d PDFs produced text",
+            elapsed,
+            success,
+            len(candidates),
+        )
+        self._odl_cache.update(extracted)
 
     def _apply_cached_result(self, envelope: DocumentEnvelope) -> bool:
         cached = self.cache.get(envelope.source_path, self.config)
@@ -88,6 +138,25 @@ class SmartFoldersPipeline:
             envelope.metadata["decision_source"] = "cache"
             return "act"
 
+        # ── Phase 1 result: use ODL pre-extracted text if available ──
+        odl_text = self._odl_cache.get(envelope.source_path)
+        if odl_text:
+            self.logger.debug("ODL cache hit for %s", envelope.filename)
+            extraction = build_extraction_from_precomputed(odl_text)
+            envelope.extracted_text = extraction.extracted_text
+            envelope.metadata.update(extraction.metadata)
+            envelope.extraction_quality = extraction.extraction_quality
+            envelope.ocr_used = False
+            envelope.status = "extracted"
+            envelope.metadata["decision_source"] = "opendataloader"
+            if not envelope.extracted_text:
+                envelope.needs_review = True
+                envelope.reason = "ODL produced no usable text"
+                envelope.status = "review"
+                return "act"
+            return "llm"
+
+        # ── Phase 2 fallback: classical per-file extraction ──
         extraction = extract(envelope.source_path, ocr_model=self.config.models.ocr_model)
         envelope.extracted_text = extraction.extracted_text
         envelope.metadata.update(extraction.metadata)
@@ -348,6 +417,10 @@ class SmartFoldersPipeline:
             self.db.complete_run(metrics)
             return metrics
 
+        # Phase 1: batch-extract all PDFs via OpenDataLoader
+        self._odl_cache = {}
+        self._preprocess_pdfs_batch(docs)
+
         results = self._run_documents(docs, dry_run=dry_run)
 
         processed = [item for item in results if item.status in {"moved", "planned"}]
@@ -393,6 +466,11 @@ class SmartFoldersPipeline:
             for record in records
             if record.source_path.expanduser().resolve().exists()
         ]
+
+        # Phase 1: batch-extract all PDFs via OpenDataLoader
+        self._odl_cache = {}
+        self._preprocess_pdfs_batch(docs)
+
         results = self._run_documents(docs, dry_run=True)
         report = build_benchmark_report(dataset_path, records, results)
         self.logger.info(

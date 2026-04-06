@@ -82,6 +82,16 @@ def _quality_from_text(text: Optional[str]) -> float:
     return 0.15
 
 
+def build_extraction_from_precomputed(text: str, source: str = "opendataloader") -> ExtractionResult:
+    """Wrap text already extracted by ODL batch into an ExtractionResult."""
+    return ExtractionResult(
+        extracted_text=text or None,
+        extraction_quality=_quality_from_text(text),
+        extractor_name=source,
+        metadata={"odl_batch": True},
+    )
+
+
 def _read_text_file(file_path: Path) -> ExtractionResult:
     for encoding in ("utf-8", "latin-1"):
         try:
@@ -145,8 +155,9 @@ def _ocr_pdf_pages_with_ollama(pdf_path: Path, model: Optional[str]) -> Optional
     page_texts = []
     temp_paths = []
     try:
-        # Limit to the first 3 pages for classification purposes
-        images = convert_from_path(str(pdf_path), dpi=200, first_page=1, last_page=3)
+        # Limit to first 10 pages for the Ollama vision fallback
+        # (ODL handles full-document extraction; this path is a last resort)
+        images = convert_from_path(str(pdf_path), dpi=200, first_page=1, last_page=10)
         for index, page_image in enumerate(images):
             with tempfile.NamedTemporaryFile(prefix=f"ai-smart-folders-page-{index}-", suffix=".png", delete=False) as tmp:
                 page_image.save(tmp.name, format="PNG")

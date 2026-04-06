@@ -14,6 +14,20 @@ class ModelSettings(BaseModel):
     ocr_model: Optional[str] = "glm-ocr:q8_0"
 
 
+class OdlSettings(BaseModel):
+    enabled: bool = True
+    use_hybrid: bool = False
+    hybrid_port: int = 5002
+    hybrid_url: str = "http://localhost:5002"
+    hybrid_timeout_ms: int = 120_000
+    hybrid_fallback: bool = True
+    timeout: int = 180
+    reading_order: str = "xycut"
+    ocr_lang: str = "pt,en"
+    # None = process all pages; set to e.g. "1-20" to limit very large PDFs
+    pages: Optional[str] = None
+
+
 class ThresholdSettings(BaseModel):
     review_confidence: float = 0.55
 
@@ -46,7 +60,7 @@ class AppConfig(BaseModel):
     organized_dir: Path = Field(default_factory=lambda: Path.home() / "OrganizedFiles")
     data_dir: Path = Field(default_factory=lambda: Path.home() / ".ai-smart-folders-data")
     ignore_dirs: List[str] = Field(default_factory=lambda: ["_Unprocessed", "_Ignored"])
-    max_content_length: int = 20000
+    max_content_length: int = 40000
     max_workers: int = 4
     dry_run: bool = False
     prompt_version: str = "v3"
@@ -54,6 +68,7 @@ class AppConfig(BaseModel):
     thresholds: ThresholdSettings = Field(default_factory=ThresholdSettings)
     workers: WorkerSettings = Field(default_factory=WorkerSettings)
     taxonomy: TaxonomyConfig = Field(default_factory=TaxonomyConfig)
+    odl: OdlSettings = Field(default_factory=OdlSettings)
 
 
 class ExtractionResult(BaseModel):

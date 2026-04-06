@@ -9,3 +9,5 @@ Pillow>=10.0.0
 python-pptx>=0.6.0
 openpyxl>=3.1.0
 extract-msg>=0.48.0
+pdf2image>=1.17.0
+opendataloader-pdf>=2.0.0
