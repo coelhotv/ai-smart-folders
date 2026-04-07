@@ -6,10 +6,10 @@ Hoje o projeto esta em transicao de um script monolitico para uma base modular m
 
 Defaults atuais de modelos no fluxo novo:
 - `router_model`: `granite4:1b-h`
-- `understanding_model`: `qwen3.5:4b`
-- `classification_model`: `qwen3.5:4b`
-- `fallback_model`: `qwen3.5:9b-q4_K_M`
-- `ocr_model`: `glm-ocr:q8_0`
+- `understanding_model`: `gemma4:e2b`
+- `classification_model`: `gemma4:e2b`
+- `fallback_model`: `qwen3.5:4b`
+- `ocr_model`: `deepseek-ocr:3b`
 
 ## Estado atual
 
