@@ -63,7 +63,8 @@ Principais modulos do fluxo novo:
   - `act`
 - prompts separados para entendimento e classificacao
 - regras deterministicas antes do LLM
-- OCR multimodal com `glm-ocr:q8_0` como padrao atual para imagens e PDFs escaneados, com fallback para `tesseract`
+- processamento híbrido em lote para PDFs via microserviço OpenDataLoader (ODL) preservando tabelas e colunas (XY-Cut).
+- OCR multimodal com `deepseek-ocr:3b` como padrão atual para imagens, com fallback para `tesseract`.
 - taxonomia em 2 niveis com aliases
 - pastas tecnicas:
   - `_NeedsReview`
@@ -97,12 +98,20 @@ Principais modulos do fluxo novo:
 ## Requisitos
 - Python 3.10 ou superior
 - dependencias do `requirements.txt`
+- Java 11 ou superior para rodar o backend OpenDataLoader PDF
 - `tesseract` para OCR quando usado
 - `soffice` para conversao de `.doc` e `.ppt` quando necessario
 - `openpyxl` para leitura nativa de `XLSX`
 - `extract-msg` para leitura nativa de `MSG`
 
 Instalacao:
+
+```bash
+# Levante o backend do OpenDataLoader para acelerar PDFs em lote
+./scripts/start-hybrid.sh --daemon
+```
+
+Instalacao de dependências Python:
 
 ```bash
 python -m pip install -r requirements.txt

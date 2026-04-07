@@ -1,7 +1,7 @@
 inbox_dir: ./tmp_inbox
 organized_dir: ./tmp_output
 data_dir: ./.ai-smart-folders-data
-max_workers: 2
+max_workers: 1
 prompt_version: v3
 
 models:
@@ -15,9 +15,9 @@ thresholds:
   review_confidence: 0.55
 
 workers:
-  io: 2
+  io: 1
   llm: 1
-  extract: 2
+  extract: 1
   act: 1
 
 taxonomy:

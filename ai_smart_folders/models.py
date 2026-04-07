@@ -58,7 +58,7 @@ class TaxonomyConfig(BaseModel):
 class AppConfig(BaseModel):
     inbox_dir: Path = Field(default_factory=lambda: Path.home() / "Dropbox" / "_courses")
     organized_dir: Path = Field(default_factory=lambda: Path.home() / "OrganizedFiles")
-    data_dir: Path = Field(default_factory=lambda: Path.home() / ".ai-smart-folders-data")
+    data_dir: Path = Field(default_factory=lambda: Path.cwd() / ".ai-smart-folders-data")
     ignore_dirs: List[str] = Field(default_factory=lambda: ["_Unprocessed", "_Ignored"])
     max_content_length: int = 40000
     max_workers: int = 4

@@ -125,7 +125,8 @@ def _ocr_with_ollama_image(image_path: Path, model: Optional[str]) -> Optional[s
                 }
             ],
         )
-    except Exception:
+    except Exception as e:
+        print(f"DEBUG OCR EXCEPTION: {e}")
         return None
 
     raw = None

@@ -14,7 +14,7 @@ from .evaluation import build_benchmark_report, load_benchmark_dataset
 from .extractors import build_extraction_from_precomputed, extract, sniff_mime_type
 from .llm import classify_document, understand_document
 from .models import AppConfig, BenchmarkReport, ClassificationResult, DocumentEnvelope, RunMetrics
-from .storage import ClassificationCache, Database
+from .storage import ClassificationCache, Database, ExtractionCache
 from .taxonomy import align_with_existing_taxonomy, normalize_categories, scan_existing_taxonomy, technical_destination
 from . import odl as _odl
 
@@ -25,6 +25,7 @@ class SmartFoldersPipeline:
         self.logger = logger
         self.api_logger = api_logger
         self.cache = ClassificationCache(config.data_dir / "file_cache.pkl")
+        self.extract_cache = ExtractionCache(config.data_dir / "extract_cache.pkl")
         self.db = Database(config.data_dir / "file_organization.db")
         # ODL batch-extracted text cache: {absolute_path -> markdown_text}
         self._odl_cache: Dict[Path, Optional[str]] = {}
@@ -149,6 +150,20 @@ class SmartFoldersPipeline:
             envelope.ocr_used = False
             envelope.status = "extracted"
             envelope.metadata["decision_source"] = "opendataloader"
+
+            # Save to extraction cache for persistence
+            self.extract_cache.set(
+                envelope.file_hash,
+                self.config.models.ocr_model,  # Even ODL results are associated with the current setup
+                {
+                    "extracted_text": envelope.extracted_text,
+                    "metadata": extraction.metadata,
+                    "extraction_quality": envelope.extraction_quality,
+                    "ocr_used": envelope.ocr_used,
+                    "conversion_used": False,
+                },
+            )
+
             if not envelope.extracted_text:
                 envelope.needs_review = True
                 envelope.reason = "ODL produced no usable text"
@@ -157,6 +172,18 @@ class SmartFoldersPipeline:
             return "llm"
 
         # ── Phase 2 fallback: classical per-file extraction ──
+        cached_extraction = self.extract_cache.get(envelope.file_hash, self.config.models.ocr_model)
+        if cached_extraction:
+            self.logger.debug("Extraction cache hit for %s", envelope.filename)
+            envelope.extracted_text = cached_extraction["extracted_text"]
+            envelope.metadata.update(cached_extraction.get("metadata", {}))
+            envelope.extraction_quality = cached_extraction.get("extraction_quality", 0.0)
+            envelope.ocr_used = cached_extraction.get("ocr_used", False)
+            envelope.conversion_used = cached_extraction.get("conversion_used", False)
+            envelope.status = "extracted"
+            envelope.metadata["decision_source"] = "extraction_cache"
+            return "llm"
+
         extraction = extract(envelope.source_path, ocr_model=self.config.models.ocr_model)
         envelope.extracted_text = extraction.extracted_text
         envelope.metadata.update(extraction.metadata)
@@ -166,6 +193,19 @@ class SmartFoldersPipeline:
         envelope.errors.extend(extraction.errors)
         envelope.status = "extracted"
         envelope.metadata["decision_source"] = envelope.metadata.get("decision_source", "extractor")
+
+        # Save to extraction cache
+        self.extract_cache.set(
+            envelope.file_hash,
+            self.config.models.ocr_model,
+            {
+                "extracted_text": envelope.extracted_text,
+                "metadata": extraction.metadata,
+                "extraction_quality": envelope.extraction_quality,
+                "ocr_used": envelope.ocr_used,
+                "conversion_used": envelope.conversion_used,
+            },
+        )
 
         if not envelope.extracted_text:
             envelope.needs_review = True

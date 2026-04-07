@@ -1,0 +1,17 @@
+storage:
+  db_path: ./.ai-smart-folders-data/file_organization.db
+  cache_path: ./.ai-smart-folders-data/file_cache.pkl
+  extract_cache_path: ./.ai-smart-folders-data/extract_cache.pkl
+
+models:
+  router_model: granite4:1b-h
+  understanding_model: granite4:3b-h
+  classification_model: granite4:3b-h
+  fallback_model: qwen3.5:4b
+  ocr_model: deepseek-ocr:3b
+
+pipeline:
+  max_workers: 1
+  batch_pdf_enabled: true
+inbox_dir: tmp_eval_samples
+output_dir: tmp_eval_organized

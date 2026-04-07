@@ -22,7 +22,10 @@ def _smart_preview(text: str, max_chars: int) -> str:
 
 
 def _parse_json_candidate(raw: Any) -> Dict[str, Any]:
-    if isinstance(raw, dict):
+    # Handle the new Ollama library objects vs old dicts
+    if hasattr(raw, "message") and hasattr(raw.message, "content"):
+        raw = raw.message.content
+    elif isinstance(raw, dict):
         if "message" in raw and isinstance(raw["message"], dict):
             raw = raw["message"].get("content", raw)
         elif "content" in raw:
@@ -43,10 +46,20 @@ def _parse_json_candidate(raw: Any) -> Dict[str, Any]:
             return {}
 
 
-def _chat_json(model: str, prompt: str) -> Dict[str, Any]:
+def _chat_json(model: str, prompt: str, schema: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     if ollama is None:
         return {}
-    response = ollama.chat(model=model, messages=[{"role": "user", "content": prompt}], format="json")
+    response = ollama.chat(
+        model=model,
+        messages=[{"role": "user", "content": prompt}],
+        format=schema or "json",
+        think=False,
+        options={"num_ctx": 16384}
+    )
+    content = response.get("message", {}).get("content", "")
+    if not content and hasattr(response, "message"):
+        content = response.message.content
+    print(f"DEBUG: model={model} content={content}")
     return _parse_json_candidate(response)
 
 
@@ -79,15 +92,6 @@ def deterministic_classification(filename: str, mime_type: Optional[str], text: 
                 reason=reason,
                 needs_review=False,
             )
-
-    if mime_type and mime_type.startswith("image/"):
-        return ClassificationResult(
-            category_l1="Media",
-            category_l2="Images",
-            confidence=0.65,
-            reason="Matched image MIME type",
-            needs_review=False,
-        )
     return None
 
 
@@ -101,7 +105,7 @@ Filename: "{filename}"
 Path: "{file_path}"
 ContentSample: "{preview}"
 """
-    payload = _chat_json(config.models.understanding_model, prompt)
+    payload = _chat_json(config.models.understanding_model, prompt, schema=UnderstandingResult.model_json_schema())
     if payload:
         return UnderstandingResult(
             summary=payload.get("summary"),
@@ -144,9 +148,12 @@ def classify_document(
 
     preview = _smart_preview(text, config.max_content_length)
     prompt = f"""
-You are a file organization assistant.
-Return only JSON with keys:
-category_l1, category_l2, confidence, reason, needs_review.
+You are a file organization classification system.
+Your goal is to categorize the document into two levels: category_l1 (broad) and category_l2 (specific).
+CRITICAL RULES:
+1. Base your classification heavily on the provided Summary, Keywords, and ContentSample. The content represents the file, NOT the extension or the existing taxonomy.
+2. An Existing Taxonomy is provided below. You MAY reuse an existing category_l1/category_l2 ONLY IF it is a highly accurate semantic match (e.g., >80% relevance) to the document's content.
+3. DO NOT force fit a document into the Existing Taxonomy if the topics don't align. It is strictly better to invent a new, highly accurate category than to reuse a mismatched one.
 
 Existing taxonomy: {existing_taxonomy}
 Filename: "{filename}"
@@ -156,8 +163,10 @@ Keywords: {understanding.keywords}
 DocumentType: "{understanding.document_type or ''}"
 Language: "{understanding.language or ''}"
 ContentSample: "{preview}"
+
+Return only JSON matching the schema parameters: category_l1, category_l2, confidence, reason, needs_review.
 """
-    payload = _chat_json(config.models.classification_model, prompt)
+    payload = _chat_json(config.models.classification_model, prompt, schema=ClassificationResult.model_json_schema())
     if payload:
         return ClassificationResult(
             category_l1=payload.get("category_l1"),

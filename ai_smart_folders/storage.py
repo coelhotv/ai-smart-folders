@@ -77,6 +77,47 @@ class ClassificationCache:
         return file_hash
 
 
+class ExtractionCache:
+    """Independent cache for raw text extraction (OCR/Conversion)."""
+
+    def __init__(self, cache_file: Path):
+        self.cache_file = cache_file
+        self.lock = threading.RLock()
+        self.cache: Dict[str, Dict[str, Any]] = self._load()
+
+    def _load(self) -> Dict[str, Dict[str, Any]]:
+        if not self.cache_file.exists():
+            return {}
+        try:
+            with open(self.cache_file, "rb") as handle:
+                return pickle.load(handle) or {}
+        except Exception:
+            return {}
+
+    def _save(self) -> None:
+        self.cache_file.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = self.cache_file.with_suffix(f"{self.cache_file.suffix}.tmp")
+        with open(temp_path, "wb") as handle:
+            pickle.dump(self.cache, handle)
+        os.replace(temp_path, self.cache_file)
+
+    @staticmethod
+    def cache_key(file_hash: str, ocr_model: Optional[str]) -> str:
+        return f"{file_hash}|{ocr_model or 'none'}"
+
+    def get(self, file_hash: str, ocr_model: Optional[str]) -> Optional[Dict[str, Any]]:
+        with self.lock:
+            return self.cache.get(self.cache_key(file_hash, ocr_model))
+
+    def set(self, file_hash: str, ocr_model: Optional[str], payload: Dict[str, Any]) -> None:
+        with self.lock:
+            self.cache[self.cache_key(file_hash, ocr_model)] = {
+                **payload,
+                "cached_at": datetime.utcnow().isoformat(),
+            }
+            self._save()
+
+
 class Database:
     def __init__(self, db_path: Path):
         self.db_path = db_path
