@@ -1,23 +1,23 @@
 inbox_dir: ./tmp_inbox
 organized_dir: ./tmp_output
 data_dir: ./.ai-smart-folders-data
-max_workers: 2
+max_workers: 1
 prompt_version: v3
 
 models:
   router_model: granite4:1b-h
-  understanding_model: granite4:3b-h
-  classification_model: granite4:3b-h
-  fallback_model: granite4:3b-h
+  understanding_model: gemma4:e2b
+  classification_model: gemma4:e2b
+  fallback_model: qwen3.5:4b
   ocr_model: glm-ocr:q8_0
 
 thresholds:
   review_confidence: 0.55
 
 workers:
-  io: 2
+  io: 1
   llm: 1
-  extract: 2
+  extract: 1
   act: 1
 
 taxonomy:

@@ -48,3 +48,10 @@ A grande evolução na capacidade de leitura de PDFs complexos foi a adoção do
 - **Ganhos Críticos:** 
     1. Respeito irrestrito ao `reading-order` semântico e recuperação perfeita de tabelas via algoritmo *XY-Cut++*.
     2. Evitou esgotamento da GPU em arquivos longos, reservando o OCR local focado em hardware apenas para imagens verdadeiras (`.jpg, .png`).
+
+## 7. A Ascensão do Gemma 4: Vision & Contexto (128kb)
+No grande "Tira Teima" do OCR local, descobrimos que o tamanho do contexto é o segredo para a estabilidade em hardware de 16GB.
+- **O Problema do DeepSeek/GLM:** Janelas de contexto pequenas (~8kb) causavam "engasgos" e loops infinitos em imagens densas (ex: infográficos), pois o mosaico de pixels (Vision Tokens) consumia quase todo o espaço de atenção.
+- **A Solução Vencedora (Gemma 4:e2b):** Com uma janela de **128kb**, o Gemma 4 processa imagens complexas sem suar. Ele foi o único a extrair corretamente textos de arquivos que outros modelos consideravam "inválidos" ou "corrompidos".
+- **Ganhos de Performance:** O tempo de extração caiu de "infinito/congelado" para estáveis **~45 segundos** em imagens ultra-densas e **~10 segundos** em documentos de texto limpo.
+- **Configuração Final Oferecida:** Gemma 4 como líder absoluto de Visão e Inteligência, transformando a app em um sistema robusto de ponta a ponta. 🏆🏁

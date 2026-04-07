@@ -9,7 +9,7 @@ Defaults atuais de modelos no fluxo novo:
 - `understanding_model`: `gemma4:e2b`
 - `classification_model`: `gemma4:e2b`
 - `fallback_model`: `qwen3.5:4b`
-- `ocr_model`: `deepseek-ocr:3b`
+- `ocr_model`: `gemma4:e2b`
 
 ## Estado atual
 

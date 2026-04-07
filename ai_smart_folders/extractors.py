@@ -1,4 +1,6 @@
 from __future__ import annotations
+import logging
+logger = logging.getLogger(__name__)
 
 import csv
 import mimetypes
@@ -134,12 +136,13 @@ def _ocr_with_ollama_image(image_path: Path, model: Optional[str]) -> Optional[s
         raw = response.get("message", {}).get("content") if isinstance(response.get("message"), dict) else response.get("content")
     else:
         message = getattr(response, "message", None)
-        if isinstance(message, dict):
-            raw = message.get("content")
-        elif hasattr(message, "content"):
+        if hasattr(message, "content"):
             raw = getattr(message, "content")
+        elif isinstance(message, dict):
+            raw = message.get("content")
         elif hasattr(response, "content"):
             raw = getattr(response, "content")
+
     if not isinstance(raw, str):
         return None
     return raw.strip() or None
